@@ -69,6 +69,25 @@ export default function AboutPage() {
         </Container>
       </section>
 
+      {/* LANDSCAPE ACCENT */}
+      <section
+        className="border-t"
+        style={{ borderColor: "rgba(255,255,255,0.1)" }}
+      >
+        <div
+          className="relative w-full aspect-[21/9] md:aspect-[24/9] overflow-hidden border-b"
+          style={{ borderColor: "rgba(255,255,255,0.1)" }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/Alaska-House.jpg"
+            alt="Zimbabwean landscape"
+            className="absolute inset-0 w-full h-full object-cover"
+            loading="lazy"
+          />
+        </div>
+      </section>
+
       {/* LEADERSHIP */}
       <section
         className="py-16 md:py-20 lg:py-24 border-t"
@@ -87,13 +106,16 @@ export default function AboutPage() {
                 style={{ borderColor: "rgba(255,255,255,0.1)" }}
               >
                 <div
-                  className="w-full md:w-48 aspect-square border flex items-center justify-center shrink-0"
+                  className="w-full md:w-56 aspect-square border overflow-hidden shrink-0"
                   style={{ borderColor: "rgba(255,255,255,0.1)" }}
-                  aria-label="Photo of Emperor Roy placeholder"
                 >
-                  <span className="font-mono text-[12px] uppercase tracking-[1px] text-white/30">
-                    PHOTO
-                  </span>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src="/images/About-Blackmass.webp"
+                    alt="Emperor Roy"
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
                 </div>
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col gap-1">

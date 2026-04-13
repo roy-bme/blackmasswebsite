@@ -1,33 +1,27 @@
 # Image Assets
 
-This directory holds static image assets for blackmass.co.uk. All files are served from `/images/...` at runtime.
+Static image assets for blackmass.co.uk. Served from `/images/...` at runtime.
 
-## Required assets (placeholders currently in use)
+## Files in use
 
-| File | Purpose | Recommended spec |
-|------|---------|------------------|
-| `logo.png` | Primary Blackmass wordmark. Referenced from Organization schema (JSON-LD). | 512×512 PNG with transparent background, white mark on transparent. |
-| `logo.svg` | Vector wordmark for inline or future use. | SVG, single-colour (white). |
-| `og-image.png` | Open Graph / Twitter card image used on every page. | 1200×630 PNG, dark background (`#1f2228`) with white "BLACKMASS" wordmark. |
-| `apple-touch-icon.png` | iOS home-screen icon. | 180×180 PNG, dark background (`#1f2228`) with white mark. |
-| `founder-roy.jpg` | Headshot of Emperor Roy on the About page. | ≥ 800×800, colour or B&W, neutral background. |
+| File | Used in | Purpose |
+|------|---------|---------|
+| `blackmass.png` | `components/Footer.tsx`, Organization JSON-LD, Open Graph | Blackmass Enterprises wreath + wordmark logo. |
+| `zimx-finance.webp` | ZimX Finance venture card (`lib/ventures.ts`) | ZimX Finance brand mark. |
+| `logo-stacked-1-scaled.png` | ZiRA venture card | ZiRA brand mark ("Chat With ZiRA"). |
+| `zimx-2.webp` | ZiGX venture card | ZiGX brand mark. Rendered on a white panel because the artwork is designed for a white background (`logoBg: "light"` in ventures data). |
+| `love-music.webp` | LoveMusicLive venture card | LoveMusicLive brand mark. |
+| `About-Blackmass.webp` | `app/about/page.tsx` — leadership card | Founder photo of Emperor Roy. |
+| `Alaska-House.jpg` | `app/about/page.tsx` — landscape accent between Story and Leadership sections | Zimbabwean landscape. |
 
-## Venture marks (optional — not currently used, reserved for future)
+## Notes
 
-| File | Venture |
-|------|---------|
-| `ventures/zimx.svg` | ZimX Finance |
-| `ventures/zira.svg` | ZiRA |
-| `ventures/zigx.svg` | ZiGX |
-| `ventures/project-tg.svg` | Project TG |
-| `ventures/lovemusiclive.svg` | LoveMusicLive |
+- **Project TG** has no logo file; its venture card renders the title in GeistMono as a text-only placeholder. Drop a logo here and reference it in `lib/ventures.ts` when ready.
+- **OG / Twitter share image** currently points at `/images/blackmass.png`. For better social previews, consider producing a dedicated 1200×630 PNG (dark `#1f2228` background, white wordmark) and updating `metadataBase` + `images` in `app/layout.tsx`.
+- **Favicon** is generated from `app/icon.svg` at build time — replace that file to change the tab icon.
 
-## Favicon
+## Design rules (for new assets)
 
-`favicon.ico` lives at the project root (`/public/favicon.ico`) — replace the placeholder with a multi-resolution ICO (16px, 32px, 48px) featuring a white "B" on a `#1f2228` background.
-
-## Design rules (keep assets consistent with the site)
-
-- Palette: white (`#ffffff`) and dark (`#1f2228`) only. No colour accents.
-- No gradients, no shadows, sharp corners.
-- Typography within assets should use GeistMono at weight 300 or 400 where possible.
+- Site palette: white (`#ffffff`) and dark (`#1f2228`); vendor-supplied brand marks keep their native colours inside their card panel.
+- No gradients or shadows in UI-owned artwork.
+- When a logo is designed for a light background, set `logoBg: "light"` on its venture in `lib/ventures.ts` so the card renders a white panel behind it.

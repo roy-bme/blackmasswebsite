@@ -42,6 +42,7 @@ export default function Navbar() {
           href="/"
           className="font-mono text-[14px] uppercase tracking-[1.4px] text-white transition-opacity hover:opacity-50"
           onClick={() => setOpen(false)}
+          aria-label="Blackmass — Home"
         >
           BLACKMASS
         </Link>

@@ -7,6 +7,7 @@ export const ventures: Venture[] = [
     description:
       "Regulated digital payment infrastructure for the UK–Zimbabwe corridor.",
     url: "https://zimx.finance",
+    logo: "/images/zimx-finance.webp",
   },
   {
     tag: "AI · CULTURE · EDUCATION",
@@ -14,6 +15,7 @@ export const ventures: Venture[] = [
     description:
       "Zimbabwe's purpose-built AI assistant — culture, language, and financial literacy.",
     url: "https://askzira.ai",
+    logo: "/images/logo-stacked-1-scaled.png",
   },
   {
     tag: "DIGITAL ASSETS · SETTLEMENT · INFRASTRUCTURE",
@@ -21,6 +23,9 @@ export const ventures: Venture[] = [
     description:
       "Reserve-backed digital settlement asset for the ZimX ecosystem.",
     url: "https://zigx.io",
+    logo: "/images/zimx-2.webp",
+    // ZiGX artwork is designed on a white background — wrap it on a white panel.
+    logoBg: "light",
   },
   {
     tag: "MUSIC · IP PROTECTION · INNOVATION",
@@ -34,5 +39,6 @@ export const ventures: Venture[] = [
     description:
       "Live entertainment brand — from grassroots shows to arena-scale events.",
     comingSoon: true,
+    logo: "/images/love-music.webp",
   },
 ];

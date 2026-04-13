@@ -43,7 +43,7 @@ export const metadata: Metadata = {
       "A British-Zimbabwean holding company operating across fintech, digital assets, AI, music IP protection, and live entertainment.",
     images: [
       {
-        url: "/images/og-image.svg",
+        url: "/images/blackmass.png",
         width: 1200,
         height: 630,
         alt: "Blackmass Enterprises",
@@ -55,7 +55,7 @@ export const metadata: Metadata = {
     title: "Blackmass Enterprises — Building Infrastructure. Creating Value.",
     description:
       "A British-Zimbabwean holding company operating across fintech, digital assets, AI, music IP protection, and live entertainment.",
-    images: ["/images/og-image.svg"],
+    images: ["/images/blackmass.png"],
     creator: "@Roy_BME",
   },
   robots: {
@@ -79,7 +79,7 @@ const organizationSchema = {
   "@type": "Organization",
   name: "Blackmass Enterprises Ltd",
   url: "https://blackmass.co.uk",
-  logo: "https://blackmass.co.uk/images/logo.png",
+  logo: "https://blackmass.co.uk/images/blackmass.png",
   description:
     "A British-Zimbabwean holding company operating across fintech, digital assets, AI, music IP protection, and live entertainment.",
   foundingDate: "2024",

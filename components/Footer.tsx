@@ -19,7 +19,7 @@ export default function Footer() {
             <img
               src="/images/blackmass.png"
               alt="Blackmass Enterprises"
-              className="h-16 w-auto opacity-60"
+              className="h-20 w-auto"
               loading="lazy"
             />
             <div className="flex flex-col gap-2">

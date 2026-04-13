@@ -16,7 +16,10 @@ export default function HomePage() {
       {/* HERO */}
       <section className="pt-32 md:pt-40 lg:pt-48 pb-24 md:pb-32 lg:pb-40">
         <Container>
-          <h1 className="font-mono font-light leading-[1.0] text-white text-[64px] sm:text-[96px] md:text-[160px] lg:text-[220px] xl:text-[280px] 2xl:text-[320px] break-all">
+          <h1
+            className="font-mono font-light leading-[0.95] text-white whitespace-nowrap"
+            style={{ fontSize: "clamp(2.5rem, 13vw, 240px)" }}
+          >
             BLACKMASS
           </h1>
           <div className="mt-10 md:mt-16 max-w-3xl flex flex-col gap-4">

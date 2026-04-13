@@ -8,22 +8,17 @@ export type Venture = {
   url?: string;
   comingSoon?: boolean;
   logo?: string;
-  /** "light" paints a white panel behind the logo for artwork designed for white backgrounds. */
-  logoBg?: "light" | "dark";
 };
 
 export default function VentureCard({ venture }: { venture: Venture }) {
-  const logoPanel =
-    venture.logoBg === "light" ? "bg-white" : "bg-white/[0.02]";
-
   return (
     <div
       className="flex flex-col justify-between bg-white/[0.03] border transition-colors hover:border-white/20 min-h-[380px]"
       style={{ borderColor: "rgba(255,255,255,0.1)" }}
     >
-      {/* Logo slot */}
+      {/* Logo slot — consistent subtle panel; each logo's baked background floats at a constrained size */}
       <div
-        className={`flex items-center justify-center h-40 border-b ${logoPanel}`}
+        className="flex items-center justify-center h-36 border-b bg-white/[0.02] px-6"
         style={{ borderColor: "rgba(255,255,255,0.1)" }}
       >
         {venture.logo ? (
@@ -31,7 +26,7 @@ export default function VentureCard({ venture }: { venture: Venture }) {
           <img
             src={venture.logo}
             alt={`${venture.title} logo`}
-            className="max-h-28 max-w-[70%] w-auto h-auto object-contain"
+            className="max-h-[104px] max-w-full w-auto h-auto object-contain"
             loading="lazy"
           />
         ) : (

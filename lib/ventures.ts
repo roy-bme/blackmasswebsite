@@ -24,8 +24,6 @@ export const ventures: Venture[] = [
       "Reserve-backed digital settlement asset for the ZimX ecosystem.",
     url: "https://zigx.io",
     logo: "/images/zimx-2.webp",
-    // ZiGX artwork is designed on a white background — wrap it on a white panel.
-    logoBg: "light",
   },
   {
     tag: "MUSIC · IP PROTECTION · INNOVATION",

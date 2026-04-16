@@ -2,18 +2,18 @@
  * TypeScript types for the indaba ops portal database schema.
  *
  * These mirror the 12 Supabase tables that back the portal:
- *   1.  profiles
- *   2.  ventures
- *   3.  memberships
- *   4.  projects
- *   5.  tasks
- *   6.  meetings
- *   7.  meeting_attendees
- *   8.  documents
- *   9.  updates
- *   10. comments
- *   11. tags
- *   12. activity_log
+ *   1.  users
+ *   2.  zones
+ *   3.  businesses
+ *   4.  contacts
+ *   5.  supply_chain_links
+ *   6.  loops
+ *   7.  introductions
+ *   8.  events
+ *   9.  event_debriefs
+ *   10. activities
+ *   11. tasks
+ *   12. competitive_intel
  *
  * Phase 2 owns the SQL migrations themselves; this file is the canonical
  * client-side shape used by server components, route handlers, and the UI
@@ -33,228 +33,259 @@ export type Uuid = string;
 export type IsoDateTime = string;
 export type IsoDate = string;
 
+/** Postgres `numeric` — serialised as `number` over PostgREST in practice. */
+export type Numeric = number;
+
+/** Constrained 1–5 integer used by `zimx_fit_score`, `threat_level`, etc. */
+export type Rating1to5 = 1 | 2 | 3 | 4 | 5;
+
 // ─── enums ───────────────────────────────────────────────────────────────────
 
-/** Org-wide role on the `profiles` row. Drives portal-level access. */
-export type OpsRole = "admin" | "operator" | "viewer";
+export type UserRole = "admin" | "ops" | "bd";
 
-/** Per-venture role on the `memberships` row. */
-export type VentureRole = "lead" | "contributor" | "observer";
+export type BusinessType = "formal" | "informal";
 
-export type ProjectStatus =
-  | "planning"
-  | "active"
-  | "blocked"
-  | "paused"
-  | "shipped"
-  | "archived";
+export type BusinessStage =
+  | "identified"
+  | "intel_gathered"
+  | "intro_made"
+  | "meeting_set"
+  | "meeting_done"
+  | "loi_signed"
+  | "onboarded";
 
-export type TaskStatus = "todo" | "in_progress" | "blocked" | "done" | "cancelled";
+export type IntroStatus =
+  | "identified"
+  | "contacted"
+  | "intro_made"
+  | "roy_approved"
+  | "meeting_set"
+  | "meeting_done"
+  | "dormant";
 
-export type TaskPriority = "low" | "medium" | "high" | "urgent";
+export type ActivityChannel = "ground_ops" | "bd_networking" | "admin";
 
-export type MeetingStatus = "scheduled" | "in_progress" | "completed" | "cancelled";
+export type ActivityType =
+  | "daily_report"
+  | "comment"
+  | "task_created"
+  | "photo"
+  | "event_log"
+  | "status_update";
 
-export type DocumentKind = "file" | "link" | "note";
+export type TaskStatus = "open" | "in_progress" | "done" | "cancelled";
 
-export type UpdateKind = "status" | "decision" | "milestone" | "risk" | "note";
+// ─── 1. users ────────────────────────────────────────────────────────────────
 
-export type CommentTarget = "project" | "task" | "update" | "meeting" | "document";
-
-export type ActivityVerb =
-  | "created"
-  | "updated"
-  | "deleted"
-  | "assigned"
-  | "commented"
-  | "completed"
-  | "archived";
-
-// ─── 1. profiles ─────────────────────────────────────────────────────────────
-
-export type Profile = {
-  id: Uuid; // = auth.users.id
+export type User = {
+  id: Uuid;
   email: string;
-  full_name: string | null;
-  display_name: string | null;
-  avatar_url: string | null;
-  role: OpsRole;
-  title: string | null;
-  bio: string | null;
-  is_active: boolean;
-  last_seen_at: IsoDateTime | null;
-  created_at: IsoDateTime;
-  updated_at: IsoDateTime;
-};
-
-// ─── 2. ventures ─────────────────────────────────────────────────────────────
-
-export type Venture = {
-  id: Uuid;
-  slug: string;
   name: string;
-  short_name: string | null;
+  role: UserRole;
+  phone: string | null;
+  zone_assigned: string | null;
+  active: boolean;
+  created_at: IsoDateTime;
+};
+
+// ─── 2. zones ────────────────────────────────────────────────────────────────
+
+export type Zone = {
+  id: Uuid;
+  name: string;
+  type: string | null;
+  centre_lat: Numeric | null;
+  centre_lng: Numeric | null;
+  boundary_geojson: Record<string, unknown> | null;
+  status: string;
+  assigned_to: Uuid | null;
+  notes: string | null;
+  created_at: IsoDateTime;
+};
+
+// ─── 3. businesses ───────────────────────────────────────────────────────────
+
+export type Business = {
+  id: Uuid;
+  name: string;
+  type: BusinessType;
   sector: SectorKey;
-  tagline: string | null;
-  description: string | null;
-  status: "live" | "pre_launch" | "concept" | "wound_down";
-  website_url: string | null;
-  logo_url: string | null;
-  sort_order: number;
+  sub_sector: string | null;
+  address: string | null;
+  zone_id: Uuid | null;
+  lat: Numeric;
+  lng: Numeric;
+  decision_maker_name: string | null;
+  decision_maker_title: string | null;
+  phone: string | null;
+  email: string | null;
+  linkedin: string | null;
+  payment_methods: string[] | null;
+  est_monthly_volume: Numeric | null;
+  key_suppliers: string[] | null;
+  key_customers: string[] | null;
+  pain_points: string[] | null;
+  launch_6: boolean;
+  onboarding_stage: BusinessStage;
+  zimx_fit_score: Rating1to5 | null;
+  mapped_by: Uuid | null;
+  date_identified: IsoDate;
+  notes: string | null;
+  photos: string[] | null;
   created_at: IsoDateTime;
   updated_at: IsoDateTime;
 };
 
-// ─── 3. memberships ──────────────────────────────────────────────────────────
+// ─── 4. contacts ─────────────────────────────────────────────────────────────
 
-export type Membership = {
+export type Contact = {
   id: Uuid;
-  profile_id: Uuid;
-  venture_id: Uuid;
-  role: VentureRole;
-  is_primary: boolean;
+  business_id: Uuid | null;
+  name: string;
+  title: string | null;
+  phone: string | null;
+  email: string | null;
+  linkedin: string | null;
+  relationship_source: string | null;
+  warmth_level: string | null;
+  introduced_by: Uuid | null;
+  notes: string | null;
   created_at: IsoDateTime;
 };
 
-// ─── 4. projects ─────────────────────────────────────────────────────────────
+// ─── 5. supply_chain_links ───────────────────────────────────────────────────
 
-export type Project = {
+export type SupplyChainLink = {
   id: Uuid;
-  venture_id: Uuid;
-  slug: string;
-  title: string;
-  summary: string | null;
-  description: string | null;
-  status: ProjectStatus;
-  owner_id: Uuid | null;
-  start_date: IsoDate | null;
-  target_date: IsoDate | null;
-  shipped_at: IsoDateTime | null;
-  archived_at: IsoDateTime | null;
-  created_by: Uuid;
+  supplier_id: Uuid | null;
+  buyer_id: Uuid | null;
+  product: string | null;
+  payment_method: string | null;
+  est_monthly_volume: Numeric | null;
+  payment_frequency: string | null;
+  friction_points: string[] | null;
+  zimx_fit_score: Rating1to5 | null;
+  mapped_by: Uuid | null;
+  date_recorded: IsoDate;
+  notes: string | null;
   created_at: IsoDateTime;
-  updated_at: IsoDateTime;
 };
 
-// ─── 5. tasks ────────────────────────────────────────────────────────────────
+// ─── 6. loops ────────────────────────────────────────────────────────────────
+
+export type Loop = {
+  id: Uuid;
+  name: string;
+  business_ids: Uuid[] | null;
+  total_estimated_volume: Numeric | null;
+  status: string;
+  date_detected: IsoDate;
+  notes: string | null;
+  created_at: IsoDateTime;
+};
+
+// ─── 7. introductions ────────────────────────────────────────────────────────
+
+export type Introduction = {
+  id: Uuid;
+  contact_id: Uuid | null;
+  contact_name: string;
+  role: string | null;
+  business: string | null;
+  business_id: Uuid | null;
+  introduced_by: Uuid;
+  how_connected: string | null;
+  why_relevant: string | null;
+  pain_points_identified: string[] | null;
+  cross_border: boolean;
+  warmth: string;
+  recommended_action: string | null;
+  status: IntroStatus;
+  roy_approved: boolean;
+  date_created: IsoDate;
+  notes: string | null;
+  created_at: IsoDateTime;
+};
+
+// ─── 8. events ───────────────────────────────────────────────────────────────
+
+export type Event = {
+  id: Uuid;
+  name: string;
+  date: IsoDate;
+  end_date: IsoDate | null;
+  location: string | null;
+  type: string | null;
+  expected_attendees: number | null;
+  entry_cost: Numeric | null;
+  priority: Rating1to5 | null;
+  attending: Uuid | null;
+  status: string;
+  notes: string | null;
+  created_at: IsoDateTime;
+};
+
+// ─── 9. event_debriefs ───────────────────────────────────────────────────────
+
+export type EventDebrief = {
+  id: Uuid;
+  event_id: Uuid | null;
+  submitted_by: Uuid | null;
+  people_met: Record<string, unknown> | null;
+  market_intel: string | null;
+  competitive_intel: string | null;
+  opportunities: string | null;
+  follow_up_actions: string | null;
+  date_submitted: IsoDateTime;
+};
+
+// ─── 10. activities ──────────────────────────────────────────────────────────
+
+export type Activity = {
+  id: Uuid;
+  user_id: Uuid;
+  channel: ActivityChannel;
+  type: ActivityType;
+  content: string;
+  attachments: string[] | null;
+  /** Self-referential — replies/threading point at the parent activity. */
+  parent_id: Uuid | null;
+  linked_business_id: Uuid | null;
+  linked_intro_id: Uuid | null;
+  created_at: IsoDateTime;
+};
+
+// ─── 11. tasks ───────────────────────────────────────────────────────────────
 
 export type Task = {
   id: Uuid;
-  project_id: Uuid | null;
-  venture_id: Uuid | null;
   title: string;
-  notes: string | null;
-  status: TaskStatus;
-  priority: TaskPriority;
-  assignee_id: Uuid | null;
+  description: string | null;
+  assigned_to: Uuid | null;
+  created_by: Uuid;
   due_date: IsoDate | null;
+  status: TaskStatus;
+  linked_business_id: Uuid | null;
+  linked_intro_id: Uuid | null;
+  created_at: IsoDateTime;
   completed_at: IsoDateTime | null;
-  created_by: Uuid;
-  created_at: IsoDateTime;
-  updated_at: IsoDateTime;
 };
 
-// ─── 6. meetings ─────────────────────────────────────────────────────────────
+// ─── 12. competitive_intel ───────────────────────────────────────────────────
 
-export type Meeting = {
+export type CompetitiveIntel = {
   id: Uuid;
-  venture_id: Uuid | null;
-  project_id: Uuid | null;
-  title: string;
-  agenda: string | null;
-  minutes: string | null;
-  status: MeetingStatus;
-  scheduled_at: IsoDateTime;
-  duration_minutes: number | null;
-  location: string | null;
-  meeting_url: string | null;
-  created_by: Uuid;
-  created_at: IsoDateTime;
-  updated_at: IsoDateTime;
-};
-
-// ─── 7. meeting_attendees ────────────────────────────────────────────────────
-
-export type MeetingAttendee = {
-  id: Uuid;
-  meeting_id: Uuid;
-  profile_id: Uuid;
-  is_required: boolean;
-  rsvp_status: "pending" | "accepted" | "declined" | "tentative";
-  attended: boolean;
-  created_at: IsoDateTime;
-};
-
-// ─── 8. documents ────────────────────────────────────────────────────────────
-
-export type Document = {
-  id: Uuid;
-  venture_id: Uuid | null;
-  project_id: Uuid | null;
-  kind: DocumentKind;
-  title: string;
-  description: string | null;
-  /** For `kind = 'file'`, a Supabase Storage path; for `link`, an external URL. */
-  storage_path: string | null;
-  url: string | null;
-  /** Markdown body, only populated when `kind = 'note'`. */
-  body: string | null;
-  mime_type: string | null;
-  byte_size: number | null;
-  created_by: Uuid;
-  created_at: IsoDateTime;
-  updated_at: IsoDateTime;
-};
-
-// ─── 9. updates ──────────────────────────────────────────────────────────────
-
-export type Update = {
-  id: Uuid;
-  venture_id: Uuid | null;
-  project_id: Uuid | null;
-  author_id: Uuid;
-  kind: UpdateKind;
-  title: string | null;
-  body: string;
-  pinned: boolean;
-  created_at: IsoDateTime;
-  updated_at: IsoDateTime;
-};
-
-// ─── 10. comments ────────────────────────────────────────────────────────────
-
-export type Comment = {
-  id: Uuid;
-  target_type: CommentTarget;
-  target_id: Uuid;
-  parent_id: Uuid | null;
-  author_id: Uuid;
-  body: string;
-  edited_at: IsoDateTime | null;
-  created_at: IsoDateTime;
-};
-
-// ─── 11. tags ────────────────────────────────────────────────────────────────
-
-export type Tag = {
-  id: Uuid;
-  slug: string;
-  label: string;
-  color: string | null;
-  description: string | null;
-  created_at: IsoDateTime;
-};
-
-// ─── 12. activity_log ────────────────────────────────────────────────────────
-
-export type ActivityLogEntry = {
-  id: Uuid;
-  actor_id: Uuid | null;
-  verb: ActivityVerb;
-  target_type: CommentTarget | "venture" | "profile" | "membership" | "tag";
-  target_id: Uuid;
-  venture_id: Uuid | null;
-  metadata: Record<string, unknown> | null;
+  competitor_name: string;
+  type: string | null;
+  location_observed: string | null;
+  who_uses: string | null;
+  offering: string | null;
+  strengths: string | null;
+  weaknesses: string | null;
+  threat_level: Rating1to5 | null;
+  observed_by: Uuid | null;
+  date_observed: IsoDate;
+  notes: string | null;
   created_at: IsoDateTime;
 };
 
@@ -272,49 +303,50 @@ export type Insert<T> = Omit<T, ServerManaged> &
 export type Update_<T> = Partial<Omit<T, ServerManaged>>;
 
 // Per-table insert / update aliases so call sites read cleanly:
-//   const row: ProfileInsert = { ... }
-export type ProfileInsert = Insert<Profile>;
-export type ProfileUpdate = Update_<Profile>;
-export type VentureInsert = Insert<Venture>;
-export type VentureUpdate = Update_<Venture>;
-export type MembershipInsert = Insert<Membership>;
-export type MembershipUpdate = Update_<Membership>;
-export type ProjectInsert = Insert<Project>;
-export type ProjectUpdate = Update_<Project>;
+//   const row: BusinessInsert = { ... }
+export type UserInsert = Insert<User>;
+export type UserUpdate = Update_<User>;
+export type ZoneInsert = Insert<Zone>;
+export type ZoneUpdate = Update_<Zone>;
+export type BusinessInsert = Insert<Business>;
+export type BusinessUpdate = Update_<Business>;
+export type ContactInsert = Insert<Contact>;
+export type ContactUpdate = Update_<Contact>;
+export type SupplyChainLinkInsert = Insert<SupplyChainLink>;
+export type SupplyChainLinkUpdate = Update_<SupplyChainLink>;
+export type LoopInsert = Insert<Loop>;
+export type LoopUpdate = Update_<Loop>;
+export type IntroductionInsert = Insert<Introduction>;
+export type IntroductionUpdate = Update_<Introduction>;
+export type EventInsert = Insert<Event>;
+export type EventUpdate = Update_<Event>;
+export type EventDebriefInsert = Insert<EventDebrief>;
+export type EventDebriefUpdate = Update_<EventDebrief>;
+export type ActivityInsert = Insert<Activity>;
+export type ActivityUpdate = Update_<Activity>;
 export type TaskInsert = Insert<Task>;
 export type TaskUpdate = Update_<Task>;
-export type MeetingInsert = Insert<Meeting>;
-export type MeetingUpdate = Update_<Meeting>;
-export type MeetingAttendeeInsert = Insert<MeetingAttendee>;
-export type MeetingAttendeeUpdate = Update_<MeetingAttendee>;
-export type DocumentInsert = Insert<Document>;
-export type DocumentUpdate = Update_<Document>;
-export type UpdateInsert = Insert<Update>;
-export type UpdateUpdate = Update_<Update>;
-export type CommentInsert = Insert<Comment>;
-export type CommentUpdate = Update_<Comment>;
-export type TagInsert = Insert<Tag>;
-export type TagUpdate = Update_<Tag>;
-export type ActivityLogInsert = Insert<ActivityLogEntry>;
+export type CompetitiveIntelInsert = Insert<CompetitiveIntel>;
+export type CompetitiveIntelUpdate = Update_<CompetitiveIntel>;
 
 /**
  * Lightweight registry of every table name. Useful for typed wrappers like
- * `supabase.from(OPS_TABLES.projects)` so the literal can't drift from the
+ * `supabase.from(OPS_TABLES.businesses)` so the literal can't drift from the
  * row-type catalog above.
  */
 export const OPS_TABLES = {
-  profiles: "profiles",
-  ventures: "ventures",
-  memberships: "memberships",
-  projects: "projects",
+  users: "users",
+  zones: "zones",
+  businesses: "businesses",
+  contacts: "contacts",
+  supply_chain_links: "supply_chain_links",
+  loops: "loops",
+  introductions: "introductions",
+  events: "events",
+  event_debriefs: "event_debriefs",
+  activities: "activities",
   tasks: "tasks",
-  meetings: "meetings",
-  meeting_attendees: "meeting_attendees",
-  documents: "documents",
-  updates: "updates",
-  comments: "comments",
-  tags: "tags",
-  activity_log: "activity_log",
+  competitive_intel: "competitive_intel",
 } as const;
 
 export type OpsTableName = (typeof OPS_TABLES)[keyof typeof OPS_TABLES];

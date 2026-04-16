@@ -36,7 +36,7 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textare
       {label ? (
         <label
           htmlFor={fieldId}
-          className="font-mono text-[11px] uppercase tracking-tag text-zimx-mute"
+          className="font-mono text-[11px] uppercase tracking-tag text-zinc-500"
         >
           {label}
         </label>
@@ -50,10 +50,10 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textare
         aria-invalid={Boolean(error) || undefined}
         aria-describedby={errorId ?? hintId}
         className={cn(
-          "w-full border border-zimx-line bg-zimx-paper px-3 py-2.5 text-[14px] text-zimx-ink",
-          "placeholder:text-zimx-mute resize-y outline-none focus:outline-none",
-          "focus:border-zimx-ink transition-colors",
-          error && "border-sector-music focus:border-sector-music",
+          "w-full border border-zinc-200 bg-white px-3 py-2.5 text-[14px] text-zimx-black",
+          "placeholder:text-zinc-500 resize-y outline-none focus:outline-none",
+          "focus:border-zimx-black transition-colors",
+          error && "border-zimx-red focus:border-zimx-red",
           disabled && "opacity-60 bg-zimx-offwhite",
           className,
         )}
@@ -63,12 +63,12 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textare
       {error ? (
         <p
           id={errorId}
-          className="font-mono text-[11px] uppercase tracking-tag text-sector-music"
+          className="font-mono text-[11px] uppercase tracking-tag text-zimx-red"
         >
           {error}
         </p>
       ) : hint ? (
-        <p id={hintId} className="text-[12px] text-zimx-mute">
+        <p id={hintId} className="text-[12px] text-zinc-500">
           {hint}
         </p>
       ) : null}

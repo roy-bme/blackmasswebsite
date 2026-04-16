@@ -22,20 +22,20 @@ export type ButtonSize = "sm" | "md" | "lg";
 const BASE =
   "inline-flex items-center justify-center gap-2 font-mono text-[12px] uppercase tracking-button " +
   "transition-colors select-none whitespace-nowrap " +
-  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zimx-ink " +
+  "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zimx-black " +
   "disabled:opacity-50 disabled:pointer-events-none";
 
 const VARIANTS: Record<ButtonVariant, string> = {
   primary:
-    "bg-zimx-ink text-white border border-zimx-ink hover:bg-zimx-charcoal",
+    "bg-zimx-black text-white border border-zimx-black hover:bg-zinc-800",
   secondary:
-    "bg-zimx-cream text-zimx-ink border border-zimx-line hover:bg-zimx-offwhite",
+    "bg-zimx-offwhite text-zimx-black border border-zinc-200 hover:bg-zinc-100",
   ghost:
-    "bg-transparent text-zimx-ink border border-transparent hover:bg-zimx-offwhite",
+    "bg-transparent text-zimx-black border border-transparent hover:bg-zimx-offwhite",
   outline:
-    "bg-transparent text-zimx-ink border border-zimx-ink hover:bg-zimx-ink hover:text-white",
+    "bg-transparent text-zimx-black border border-zimx-black hover:bg-zimx-black hover:text-white",
   danger:
-    "bg-sector-music text-white border border-sector-music hover:bg-sector-music/90",
+    "bg-zimx-red text-white border border-zimx-red hover:bg-zimx-red/90",
 };
 
 const SIZES: Record<ButtonSize, string> = {

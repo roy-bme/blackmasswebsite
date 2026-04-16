@@ -2,6 +2,7 @@
 import type { HTMLAttributes } from "react";
 
 import { cn } from "@/lib/ops/cn";
+import { SECTORS } from "@/lib/ops/sector-colors";
 
 export type AvatarSize = "xs" | "sm" | "md" | "lg" | "xl";
 
@@ -24,9 +25,9 @@ type AvatarProps = HTMLAttributes<HTMLSpanElement> & {
 };
 
 const STATUS_COLOURS: Record<NonNullable<AvatarProps["status"]>, string> = {
-  online: "bg-sector-ai",
-  away: "bg-sector-assets",
-  offline: "bg-zimx-mute",
+  online: "bg-zimx-green",
+  away: "bg-zimx-gold",
+  offline: "bg-zinc-400",
 };
 
 /**
@@ -48,17 +49,13 @@ function getInitials(name: string): string {
 
 /**
  * Pick a deterministic background tint based on the name string so that the
- * same person always renders with the same fallback colour. Uses the sector
- * palette to stay visually consistent with the rest of the portal.
+ * same person always renders with the same fallback colour. Uses the
+ * eight-sector palette to stay visually consistent with the rest of the
+ * portal.
  */
-const FALLBACK_TINTS = [
-  "bg-sector-fintech text-white",
-  "bg-sector-ai text-white",
-  "bg-sector-assets text-zimx-ink",
-  "bg-sector-music text-white",
-  "bg-sector-entertainment text-white",
-  "bg-sector-ops text-white",
-];
+const FALLBACK_TINTS = SECTORS.map(
+  (label) => `bg-sector-${label.toLowerCase()} text-white`,
+);
 
 function pickTint(name: string): string {
   let hash = 0;
@@ -83,7 +80,7 @@ export default function Avatar({
   return (
     <span
       className={cn(
-        "relative inline-flex shrink-0 items-center justify-center overflow-hidden border border-zimx-line",
+        "relative inline-flex shrink-0 items-center justify-center overflow-hidden border border-zinc-200",
         dims.box,
         className,
       )}
@@ -114,7 +111,7 @@ export default function Avatar({
         <span
           aria-label={`${name} is ${status}`}
           className={cn(
-            "absolute bottom-0 right-0 h-2 w-2 border border-zimx-paper",
+            "absolute bottom-0 right-0 h-2 w-2 border border-white",
             STATUS_COLOURS[status],
           )}
         />

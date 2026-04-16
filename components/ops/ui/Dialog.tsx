@@ -95,7 +95,7 @@ export default function Dialog({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-zimx-ink/70 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-zimx-black/70 p-4"
       onMouseDown={handleBackdropClick}
       role="presentation"
     >
@@ -105,7 +105,7 @@ export default function Dialog({
         aria-modal="true"
         aria-label={ariaLabel}
         className={cn(
-          "relative w-full bg-zimx-paper border border-zimx-line shadow-2xl",
+          "relative w-full bg-white border border-zinc-200 shadow-2xl",
           "max-h-[90vh] overflow-y-auto",
           SIZES[size],
           className,
@@ -125,7 +125,7 @@ function DialogHeader({ className, children, ...rest }: SectionProps) {
   return (
     <div
       className={cn(
-        "flex items-start justify-between gap-4 border-b border-zimx-line px-6 py-4",
+        "flex items-start justify-between gap-4 border-b border-zinc-200 px-6 py-4",
         className,
       )}
       {...rest}
@@ -143,7 +143,7 @@ function DialogTitle({
   return (
     <h2
       className={cn(
-        "font-mono text-[14px] uppercase tracking-tag text-zimx-ink",
+        "font-mono text-[14px] uppercase tracking-tag text-zimx-black",
         className,
       )}
       {...rest}
@@ -155,7 +155,7 @@ function DialogTitle({
 
 function DialogBody({ className, children, ...rest }: SectionProps) {
   return (
-    <div className={cn("px-6 py-5 text-[14px] text-zimx-ink", className)} {...rest}>
+    <div className={cn("px-6 py-5 text-[14px] text-zimx-black", className)} {...rest}>
       {children}
     </div>
   );
@@ -165,7 +165,7 @@ function DialogFooter({ className, children, ...rest }: SectionProps) {
   return (
     <div
       className={cn(
-        "flex items-center justify-end gap-3 border-t border-zimx-line px-6 py-4",
+        "flex items-center justify-end gap-3 border-t border-zinc-200 px-6 py-4",
         className,
       )}
       {...rest}
@@ -181,7 +181,7 @@ function DialogCloseButton({ onClose }: { onClose: () => void }) {
       type="button"
       onClick={onClose}
       aria-label="Close dialog"
-      className="font-mono text-[11px] uppercase tracking-tag text-zimx-mute hover:text-zimx-ink"
+      className="font-mono text-[11px] uppercase tracking-tag text-zinc-500 hover:text-zimx-black"
     >
       Close
     </button>

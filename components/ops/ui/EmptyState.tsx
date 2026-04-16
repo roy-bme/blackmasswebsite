@@ -33,28 +33,28 @@ export default function EmptyState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center border border-dashed border-zimx-line bg-zimx-paper px-6 py-16 text-center",
+        "flex flex-col items-center justify-center border border-dashed border-zinc-200 bg-white px-6 py-16 text-center",
         className,
       )}
     >
       {icon ? (
-        <div className="mb-4 inline-flex h-12 w-12 items-center justify-center text-zimx-mute">
+        <div className="mb-4 inline-flex h-12 w-12 items-center justify-center text-zinc-500">
           {icon}
         </div>
       ) : null}
 
       {eyebrow ? (
-        <p className="font-mono text-[11px] uppercase tracking-tag text-zimx-mute">
+        <p className="font-mono text-[11px] uppercase tracking-tag text-zinc-500">
           {eyebrow}
         </p>
       ) : null}
 
-      <h3 className="mt-2 font-mono text-[18px] uppercase tracking-tag text-zimx-ink">
+      <h3 className="mt-2 font-mono text-[18px] uppercase tracking-tag text-zimx-black">
         {title}
       </h3>
 
       {description ? (
-        <p className="mt-3 max-w-md text-[14px] leading-relaxed text-zimx-mute">
+        <p className="mt-3 max-w-md text-[14px] leading-relaxed text-zinc-500">
           {description}
         </p>
       ) : null}
@@ -66,7 +66,7 @@ export default function EmptyState({
         </div>
       ) : null}
 
-      <p className="mt-10 border-t border-zimx-line pt-4 font-mono text-[10px] uppercase tracking-tag text-zimx-mute">
+      <p className="mt-10 border-t border-zinc-200 pt-4 font-mono text-[10px] uppercase tracking-tag text-zinc-500">
         indaba — a gathering where business is discussed
       </p>
     </div>

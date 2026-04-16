@@ -32,11 +32,11 @@ const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
     <div
       ref={ref}
       className={cn(
-        "border border-zimx-line",
-        bare ? "bg-transparent" : "bg-zimx-paper",
+        "border border-zinc-200",
+        bare ? "bg-transparent" : "bg-white",
         PADDING[padding],
         interactive &&
-          "transition-shadow hover:shadow-[0_2px_0_0_rgba(31,34,40,1)] cursor-pointer",
+          "transition-shadow hover:shadow-[0_2px_0_0_rgba(27,27,27,1)] cursor-pointer",
         className,
       )}
       {...rest}
@@ -56,7 +56,7 @@ const CardHeader = forwardRef<HTMLDivElement, SectionProps>(function CardHeader(
     <div
       ref={ref}
       className={cn(
-        "flex items-start justify-between gap-4 border-b border-zimx-line px-6 py-4",
+        "flex items-start justify-between gap-4 border-b border-zinc-200 px-6 py-4",
         className,
       )}
       {...rest}
@@ -85,7 +85,7 @@ const CardFooter = forwardRef<HTMLDivElement, SectionProps>(function CardFooter(
     <div
       ref={ref}
       className={cn(
-        "flex items-center justify-end gap-3 border-t border-zimx-line px-6 py-4",
+        "flex items-center justify-end gap-3 border-t border-zinc-200 px-6 py-4",
         className,
       )}
       {...rest}
@@ -103,7 +103,7 @@ const CardTitle = forwardRef<
     <h3
       ref={ref}
       className={cn(
-        "font-mono text-[14px] uppercase tracking-tag text-zimx-ink",
+        "font-mono text-[14px] uppercase tracking-tag text-zimx-black",
         className,
       )}
       {...rest}
@@ -120,7 +120,7 @@ const CardDescription = forwardRef<
   return (
     <p
       ref={ref}
-      className={cn("mt-1 text-[13px] text-zimx-mute", className)}
+      className={cn("mt-1 text-[13px] text-zinc-500", className)}
       {...rest}
     >
       {children}

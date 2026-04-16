@@ -15,7 +15,7 @@ type InputProps = InputHTMLAttributes<HTMLInputElement> & {
 /**
  * Text input with optional label, hint, and inline error message. The visual
  * style matches the rest of the ops portal — flat, square corners, ink-on-paper
- * with a sector-music red error state.
+ * with a zimx-red error state.
  */
 const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   {
@@ -41,7 +41,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       {label ? (
         <label
           htmlFor={inputId}
-          className="font-mono text-[11px] uppercase tracking-tag text-zimx-mute"
+          className="font-mono text-[11px] uppercase tracking-tag text-zinc-500"
         >
           {label}
         </label>
@@ -49,14 +49,14 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
 
       <div
         className={cn(
-          "relative flex items-center border border-zimx-line bg-zimx-paper transition-colors",
-          "focus-within:border-zimx-ink",
-          error && "border-sector-music focus-within:border-sector-music",
+          "relative flex items-center border border-zinc-200 bg-white transition-colors",
+          "focus-within:border-zimx-black",
+          error && "border-zimx-red focus-within:border-zimx-red",
           disabled && "opacity-60 bg-zimx-offwhite",
         )}
       >
         {leadingIcon ? (
-          <span className="pl-3 text-zimx-mute inline-flex">{leadingIcon}</span>
+          <span className="pl-3 text-zinc-500 inline-flex">{leadingIcon}</span>
         ) : null}
         <input
           ref={ref}
@@ -65,7 +65,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           aria-invalid={Boolean(error) || undefined}
           aria-describedby={errorId ?? hintId}
           className={cn(
-            "w-full bg-transparent px-3 py-2.5 text-[14px] text-zimx-ink placeholder:text-zimx-mute",
+            "w-full bg-transparent px-3 py-2.5 text-[14px] text-zimx-black placeholder:text-zinc-500",
             "outline-none focus:outline-none",
             leadingIcon && "pl-2",
             trailingIcon && "pr-2",
@@ -74,19 +74,19 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           {...rest}
         />
         {trailingIcon ? (
-          <span className="pr-3 text-zimx-mute inline-flex">{trailingIcon}</span>
+          <span className="pr-3 text-zinc-500 inline-flex">{trailingIcon}</span>
         ) : null}
       </div>
 
       {error ? (
         <p
           id={errorId}
-          className="font-mono text-[11px] uppercase tracking-tag text-sector-music"
+          className="font-mono text-[11px] uppercase tracking-tag text-zimx-red"
         >
           {error}
         </p>
       ) : hint ? (
-        <p id={hintId} className="text-[12px] text-zimx-mute">
+        <p id={hintId} className="text-[12px] text-zinc-500">
           {hint}
         </p>
       ) : null}

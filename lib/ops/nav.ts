@@ -44,7 +44,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     href: "/indaba/events",
     label: "Events",
-    roles: ["admin", "bd"],
+    roles: ["admin", "bd", "ops"],
   },
   {
     href: "/indaba/feed",

@@ -4,6 +4,7 @@ import Pill, { type PillTone } from "@/components/ops/ui/Pill";
 import { cn } from "@/lib/ops/cn";
 import { requireModuleAccess } from "@/lib/ops/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getZoneBounds, pointInBounds } from "@/lib/ops/zone-bounds";
 import type {
   Business,
   BusinessStage,
@@ -54,7 +55,7 @@ function formatDueDate(isoDate: string | null): string {
 
 type BusinessLite = Pick<
   Business,
-  "id" | "name" | "zone_id" | "onboarding_stage" | "launch_6"
+  "id" | "name" | "zone_id" | "onboarding_stage" | "launch_6" | "lat" | "lng"
 >;
 
 type CountOnly = { count: number | null };
@@ -92,7 +93,7 @@ export default async function DashboardPage({
   ] = await Promise.all([
     supabase
       .from("businesses")
-      .select("id, name, zone_id, onboarding_stage, launch_6"),
+      .select("id, name, zone_id, onboarding_stage, launch_6, lat, lng"),
     supabase
       .from("supply_chain_links")
       .select("*", { count: "exact", head: true }),
@@ -178,8 +179,15 @@ export default async function DashboardPage({
     });
 
   const zones = (zonesRes.data ?? []) as Zone[];
+  // Compute zone membership by lat/lng bounds rather than relying on the
+  // zone_id FK, which is null for many seeded businesses. See lib/ops/zone-bounds.
   const zoneStats = zones.map((zone) => {
-    const inZone = businesses.filter((b) => b.zone_id === zone.id);
+    const bounds = getZoneBounds(zone);
+    const inZone = bounds
+      ? businesses.filter(
+          (b) => b.zone_id === zone.id || pointInBounds(b, bounds),
+        )
+      : businesses.filter((b) => b.zone_id === zone.id);
     const past = inZone.filter(
       (b) => b.onboarding_stage !== "identified",
     ).length;
@@ -294,7 +302,6 @@ export default async function DashboardPage({
                       zone={zone}
                       total={total}
                       past={past}
-                      grandTotal={totalBusinesses}
                     />
                   ))
                 )}
@@ -388,19 +395,20 @@ type ZoneRowProps = {
   zone: Zone;
   total: number;
   past: number;
-  grandTotal: number;
 };
 
-function ZoneRow({ zone, total, past, grandTotal }: ZoneRowProps) {
+function ZoneRow({ zone, total, past }: ZoneRowProps) {
   const pct = total > 0 ? (past / total) * 100 : 0;
+  const label =
+    total === 0 ? "0 mapped" : `${past}/${total} past identified`;
   return (
     <div className="space-y-1.5">
-      <div className="flex items-baseline justify-between">
-        <span className="text-[13px] font-medium text-zimx-black">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="truncate text-[13px] font-medium text-zimx-black">
           {zone.name}
         </span>
-        <span className="font-mono text-[11px] uppercase tracking-tag text-zinc-500">
-          {total}/{grandTotal}
+        <span className="whitespace-nowrap font-mono text-[11px] uppercase tracking-tag text-zinc-500">
+          {label}
         </span>
       </div>
       <div className="h-1.5 w-full bg-zinc-100">

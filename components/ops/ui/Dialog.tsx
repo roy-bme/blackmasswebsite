@@ -95,7 +95,8 @@ export default function Dialog({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-zimx-black/70 p-4"
+      className="fixed inset-0 flex items-center justify-center bg-zimx-black/70 p-4"
+      style={{ zIndex: 1000 }}
       onMouseDown={handleBackdropClick}
       role="presentation"
     >
@@ -110,6 +111,7 @@ export default function Dialog({
           SIZES[size],
           className,
         )}
+        style={{ zIndex: 1001 }}
         onMouseDown={(e) => e.stopPropagation()}
       >
         {children}

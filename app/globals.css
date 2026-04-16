@@ -42,3 +42,12 @@ a:focus-visible {
   outline: 2px solid rgba(59, 130, 246, 0.5);
   outline-offset: 2px;
 }
+
+/* Constrain Leaflet's control layers so portal'd dialogs (z-index: 1000+)
+   always render above map controls. By default Leaflet puts its control
+   container at z-index 1000, which ties with our dialog and can cause the
+   controls to render on top of the dialog content in some browsers. */
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 600 !important;
+}

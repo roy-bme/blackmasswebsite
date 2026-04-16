@@ -1,6 +1,22 @@
 import Container from "@/components/Container";
 
-export default function LoginPage() {
+import LoginForm from "./LoginForm";
+
+type LoginPageProps = {
+  searchParams: { next?: string };
+};
+
+// Only accept relative, single-segment-safe `next` values so a malicious link
+// can't redirect post-auth to an external host.
+function sanitiseNext(next: string | undefined): string | undefined {
+  if (!next) return undefined;
+  if (!next.startsWith("/") || next.startsWith("//")) return undefined;
+  return next;
+}
+
+export default function LoginPage({ searchParams }: LoginPageProps) {
+  const next = sanitiseNext(searchParams.next);
+
   return (
     <section className="pt-32 md:pt-40 pb-24">
       <Container>
@@ -11,8 +27,11 @@ export default function LoginPage() {
           SIGN IN
         </h1>
         <p className="mt-8 max-w-xl text-[16px] text-white/70">
-          Supabase authentication lands in Phase 2.
+          Enter your Blackmass email address. We&apos;ll send a magic link that signs
+          you in for this session — no password required.
         </p>
+
+        <LoginForm next={next} />
       </Container>
     </section>
   );

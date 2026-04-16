@@ -1,7 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { updateSupabaseSession } from "@/lib/supabase/middleware";
+
 /**
- * Hostname-based router.
+ * Hostname-based router + Supabase session refresh.
  *
  * One Vercel project serves two surfaces:
  *   - blackmass.co.uk (and previews / localhost)  → public marketing
@@ -14,10 +16,20 @@ import { NextResponse, type NextRequest } from "next/server";
  * to `/indaba/*` returns 404 so the portal surface isn't discoverable from
  * the public domain.
  *
- * Session refresh (Supabase SSR) gets wired in here in Phase 1.
+ * On the indaba host we additionally:
+ *   1. Refresh the Supabase auth cookies on every request (so expiring
+ *      access tokens get rotated transparently).
+ *   2. Redirect unauthenticated requests to `/login`, except for the auth
+ *      surface itself (`/login`, `/auth/*`).
+ *   3. Redirect already-authenticated users away from `/login` and back to
+ *      the portal root `/` (which rewrites to `/indaba`).
  */
 
 const INDABA_PATH_PREFIX = "/indaba";
+
+// Visible (pre-rewrite) paths on the indaba host that do NOT require a
+// signed-in user. Everything else on the indaba host is gated.
+const PUBLIC_INDABA_PATHS = ["/login", "/auth"];
 
 function isIndabaHost(host: string | null): boolean {
   if (!host) return false;
@@ -29,37 +41,76 @@ function isIndabaHost(host: string | null): boolean {
   return hostname === "indaba" || hostname.startsWith("indaba.");
 }
 
-export function middleware(request: NextRequest) {
+function isPublicIndabaPath(pathname: string): boolean {
+  return PUBLIC_INDABA_PATHS.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
+function copyAuthCookies(source: NextResponse, target: NextResponse): NextResponse {
+  for (const cookie of source.cookies.getAll()) {
+    target.cookies.set(cookie);
+  }
+  return target;
+}
+
+function withNoIndex(response: NextResponse): NextResponse {
+  response.headers.set("X-Robots-Tag", "noindex, nofollow, nocache");
+  return response;
+}
+
+export async function middleware(request: NextRequest) {
   const host = request.headers.get("host");
-  const { pathname, search } = request.nextUrl;
+  const { pathname } = request.nextUrl;
   const onIndabaHost = isIndabaHost(host);
 
-  if (onIndabaHost) {
-    // Already rewritten (or the user typed `/indaba/...` directly on the
-    // portal host). Pass through unchanged but add the noindex header.
+  if (!onIndabaHost) {
+    // Marketing host: hide the portal surface entirely. No auth logic here —
+    // the marketing site is fully public.
     if (pathname === INDABA_PATH_PREFIX || pathname.startsWith(`${INDABA_PATH_PREFIX}/`)) {
-      const response = NextResponse.next();
-      response.headers.set("X-Robots-Tag", "noindex, nofollow, nocache");
-      return response;
+      return new NextResponse("Not Found", { status: 404 });
     }
-
-    // Rewrite the visible URL `/foo` → internal `/indaba/foo`.
-    const rewritten = request.nextUrl.clone();
-    rewritten.pathname = pathname === "/" ? INDABA_PATH_PREFIX : `${INDABA_PATH_PREFIX}${pathname}`;
-    const response = NextResponse.rewrite(rewritten);
-    response.headers.set("X-Robots-Tag", "noindex, nofollow, nocache");
-    return response;
+    return NextResponse.next();
   }
 
-  // Marketing host: hide the portal surface entirely.
+  // --- Indaba host ---------------------------------------------------------
+
+  // Refresh the Supabase session. `authResponse` has any rotated auth cookies
+  // attached; if we return a different response below we copy those over.
+  const { response: authResponse, user } = await updateSupabaseSession(request);
+
+  const isPublic = isPublicIndabaPath(pathname);
+
+  // Signed-in users hitting /login get bounced to the portal root. They'll be
+  // routed onwards to /dashboard by the ops layout in a later phase.
+  if (user && pathname === "/login") {
+    const redirect = NextResponse.redirect(new URL("/", request.url));
+    return withNoIndex(copyAuthCookies(authResponse, redirect));
+  }
+
+  // Unauthenticated users are bounced to /login (preserving intended dest).
+  if (!user && !isPublic) {
+    const loginUrl = new URL("/login", request.url);
+    if (pathname !== "/") {
+      loginUrl.searchParams.set("next", pathname);
+    }
+    const redirect = NextResponse.redirect(loginUrl);
+    return withNoIndex(copyAuthCookies(authResponse, redirect));
+  }
+
+  // Path is allowed. Now apply the hostname rewrite `/foo` → `/indaba/foo`
+  // (unless the user already typed `/indaba/...` directly, which is legal
+  // but uncommon), preserving the Supabase cookies from the auth response.
   if (pathname === INDABA_PATH_PREFIX || pathname.startsWith(`${INDABA_PATH_PREFIX}/`)) {
-    return new NextResponse("Not Found", { status: 404 });
+    return withNoIndex(authResponse);
   }
 
-  // Avoid "unused" warning if `search` is never read; keeps the function
-  // stable if we later choose to preserve query strings on rewrites.
-  void search;
-  return NextResponse.next();
+  const rewritten = request.nextUrl.clone();
+  rewritten.pathname = pathname === "/" ? INDABA_PATH_PREFIX : `${INDABA_PATH_PREFIX}${pathname}`;
+  const rewriteResponse = NextResponse.rewrite(rewritten, {
+    request: { headers: request.headers },
+  });
+  return withNoIndex(copyAuthCookies(authResponse, rewriteResponse));
 }
 
 // Run on everything except Next.js internals and static assets.

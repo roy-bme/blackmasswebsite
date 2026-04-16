@@ -10,30 +10,29 @@ const config: Config = {
       colors: {
         ink: "#1f2228",
         // ZimX brand palette — consumed by the ops portal under /indaba.
-        // Marketing pages still use the dark `ink` body, while ops pages
-        // override the body background to `zimx-offwhite` via OpsShell.
+        // Sourced from the ZimX brand guidelines, not the Blackmass marketing
+        // palette. Ops pages override the body background to `zimx-offwhite`
+        // via OpsShell.
         zimx: {
-          ink: "#1f2228",
-          charcoal: "#2a2d33",
-          slate: "#3b3f47",
-          mute: "#6b7280",
-          line: "#e5e3dd",
-          paper: "#ffffff",
-          offwhite: "#f5f3ee",
-          cream: "#faf8f3",
-          gold: "#c9a55a",
-          rust: "#a0552b",
-          sage: "#7a8a6a",
+          green: "#00875A",
+          "green-deep": "#0F3424",
+          gold: "#D4AF37",
+          "gold-muted": "#B19631",
+          black: "#1B1B1B",
+          red: "#6A0F07",
+          offwhite: "#F5F5F5",
         },
-        // Sector accents — one per Blackmass venture sector. Used by
-        // SectorPill, project cards, and the Logo accent rail.
+        // Sector accents — one per Bulawayo business category tracked by the
+        // indaba portal. Used by SectorPill, business cards, and map markers.
         sector: {
-          fintech: "#1f5fa6",
-          ai: "#6d28d9",
-          assets: "#c9a55a",
-          music: "#be123c",
-          entertainment: "#c2410c",
-          ops: "#3b3f47",
+          wholesale: "#378ADD",
+          fmcg: "#1D9E75",
+          distribution: "#BA7517",
+          manufacturing: "#E24B4A",
+          agriculture: "#7F77DD",
+          fuel: "#D4537E",
+          hardware: "#888780",
+          contact: "#D85A30",
         },
       },
       fontFamily: {

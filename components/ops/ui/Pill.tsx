@@ -14,12 +14,12 @@ export type PillTone =
 export type PillSize = "sm" | "md";
 
 const TONES: Record<PillTone, string> = {
-  neutral: "bg-zimx-offwhite text-zimx-slate border-zimx-line",
-  ink: "bg-zimx-ink text-white border-zimx-ink",
-  success: "bg-sector-ai/10 text-sector-ai border-sector-ai/30",
-  warning: "bg-sector-assets/15 text-zimx-ink border-sector-assets/40",
-  danger: "bg-sector-music/10 text-sector-music border-sector-music/30",
-  info: "bg-sector-fintech/10 text-sector-fintech border-sector-fintech/30",
+  neutral: "bg-zimx-offwhite text-zinc-700 border-zinc-200",
+  ink: "bg-zimx-black text-white border-zimx-black",
+  success: "bg-zimx-green/10 text-zimx-green border-zimx-green/30",
+  warning: "bg-zimx-gold/15 text-zimx-black border-zimx-gold/40",
+  danger: "bg-zimx-red/10 text-zimx-red border-zimx-red/30",
+  info: "bg-blue-50 text-blue-700 border-blue-200",
 };
 
 const SIZES: Record<PillSize, string> = {
@@ -40,8 +40,9 @@ type PillProps = HTMLAttributes<HTMLSpanElement> & {
  * Square-cornered status / category pill.
  *
  * Use `tone` for generic states (success / warning / danger / info / neutral)
- * and `sector` when the pill represents a specific Blackmass venture sector.
- * The leading dot is on by default for sector pills, off by default otherwise.
+ * and `sector` when the pill represents one of the eight Bulawayo business
+ * sectors. The leading dot is on by default for sector pills, off by default
+ * otherwise.
  */
 export default function Pill({
   tone = "neutral",

@@ -38,9 +38,9 @@ export default function Logo({
 }: Props) {
   const dims = SIZES[size];
   const isLight = variant === "light";
-  const markFill = isLight ? "#ffffff" : "#1f2228";
-  const markStroke = isLight ? "#ffffff" : "#1f2228";
-  const wordColor = isLight ? "text-white" : "text-zimx-ink";
+  const markFill = isLight ? "#ffffff" : "#1B1B1B";
+  const markStroke = isLight ? "#ffffff" : "#1B1B1B";
+  const wordColor = isLight ? "text-white" : "text-zimx-black";
 
   return (
     <span
@@ -74,13 +74,13 @@ export default function Logo({
         />
         {/* Inner dot — the meeting point. */}
         <circle cx="20" cy="20" r="4" fill={markFill} />
-        {/* Sector accent rail across the bottom — five ventures, five colours. */}
+        {/* Sector accent rail across the bottom — first five Bulawayo sector colours. */}
         <g>
-          <rect x="4" y="36" width="6" height="2" fill="#1f5fa6" />
-          <rect x="11" y="36" width="6" height="2" fill="#6d28d9" />
-          <rect x="18" y="36" width="6" height="2" fill="#c9a55a" />
-          <rect x="25" y="36" width="6" height="2" fill="#be123c" />
-          <rect x="32" y="36" width="4" height="2" fill="#c2410c" />
+          <rect x="4" y="36" width="6" height="2" fill="#378ADD" />
+          <rect x="11" y="36" width="6" height="2" fill="#1D9E75" />
+          <rect x="18" y="36" width="6" height="2" fill="#BA7517" />
+          <rect x="25" y="36" width="6" height="2" fill="#E24B4A" />
+          <rect x="32" y="36" width="4" height="2" fill="#7F77DD" />
         </g>
       </svg>
 

@@ -51,7 +51,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
       {label ? (
         <label
           htmlFor={fieldId}
-          className="font-mono text-[11px] uppercase tracking-tag text-zimx-mute"
+          className="font-mono text-[11px] uppercase tracking-tag text-zinc-500"
         >
           {label}
         </label>
@@ -59,9 +59,9 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
 
       <div
         className={cn(
-          "relative border border-zimx-line bg-zimx-paper transition-colors",
-          "focus-within:border-zimx-ink",
-          error && "border-sector-music focus-within:border-sector-music",
+          "relative border border-zinc-200 bg-white transition-colors",
+          "focus-within:border-zimx-black",
+          error && "border-zimx-red focus-within:border-zimx-red",
           disabled && "opacity-60 bg-zimx-offwhite",
         )}
       >
@@ -72,7 +72,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
           aria-invalid={Boolean(error) || undefined}
           aria-describedby={errorId ?? hintId}
           className={cn(
-            "w-full appearance-none bg-transparent px-3 py-2.5 pr-9 text-[14px] text-zimx-ink",
+            "w-full appearance-none bg-transparent px-3 py-2.5 pr-9 text-[14px] text-zimx-black",
             "outline-none focus:outline-none",
             className,
           )}
@@ -93,7 +93,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
         </select>
         {/* Caret — flat, monochrome to match the ink-on-paper aesthetic. */}
         <svg
-          className="pointer-events-none absolute right-3 top-1/2 h-3 w-3 -translate-y-1/2 text-zimx-mute"
+          className="pointer-events-none absolute right-3 top-1/2 h-3 w-3 -translate-y-1/2 text-zinc-500"
           viewBox="0 0 12 12"
           fill="none"
           aria-hidden="true"
@@ -110,12 +110,12 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
       {error ? (
         <p
           id={errorId}
-          className="font-mono text-[11px] uppercase tracking-tag text-sector-music"
+          className="font-mono text-[11px] uppercase tracking-tag text-zimx-red"
         >
           {error}
         </p>
       ) : hint ? (
-        <p id={hintId} className="text-[12px] text-zimx-mute">
+        <p id={hintId} className="text-[12px] text-zinc-500">
           {hint}
         </p>
       ) : null}

@@ -79,7 +79,7 @@ function TabList({ className, children, ...rest }: TabListProps) {
     <div
       role="tablist"
       className={cn(
-        "flex items-center gap-6 border-b border-zimx-line",
+        "flex items-center gap-6 border-b border-zinc-200",
         className,
       )}
       {...rest}
@@ -129,10 +129,10 @@ function Tab({ value, disabled, className, children }: TabProps) {
       onKeyDown={handleKeyDown}
       className={cn(
         "relative -mb-px border-b-2 py-3 font-mono text-[12px] uppercase tracking-tag",
-        "transition-colors focus:outline-none focus-visible:text-zimx-ink",
+        "transition-colors focus:outline-none focus-visible:text-zimx-black",
         isActive
-          ? "border-zimx-ink text-zimx-ink"
-          : "border-transparent text-zimx-mute hover:text-zimx-ink",
+          ? "border-zimx-black text-zimx-black"
+          : "border-transparent text-zinc-500 hover:text-zimx-black",
         disabled && "opacity-40 pointer-events-none",
         className,
       )}

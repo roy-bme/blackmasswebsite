@@ -1,8 +1,11 @@
 /**
  * Sector colour map.
  *
- * Each Blackmass venture lives in a sector, and the ops portal uses a single
- * accent colour per sector for pills, project cards, and the Logo accent rail.
+ * The "sectors" here are the eight Bulawayo business categories the indaba
+ * portal tracks (Wholesale, FMCG, Distribution, Manufacturing, Agriculture,
+ * Fuel, Hardware, and Contact — the last being reserved for Tafadzwa's
+ * introduction diamonds on the map). Each sector has a single accent colour
+ * used for pills, business cards, and map markers.
  *
  * The hex values mirror the `sector.*` palette in `tailwind.config.ts`. They
  * are duplicated here so server-side rendering paths (chart fills, inline
@@ -10,94 +13,78 @@
  * through Tailwind's class compiler.
  */
 
-export type SectorKey =
-  | "fintech"
-  | "ai"
-  | "assets"
-  | "music"
-  | "entertainment"
-  | "ops";
+export const SECTORS = [
+  "Wholesale",
+  "FMCG",
+  "Distribution",
+  "Manufacturing",
+  "Agriculture",
+  "Fuel",
+  "Hardware",
+  "Contact",
+] as const;
+
+export type SectorLabel = (typeof SECTORS)[number];
+export type SectorKey = Lowercase<SectorLabel>;
 
 export type SectorTheme = {
   key: SectorKey;
-  label: string;
+  label: SectorLabel;
   hex: string;
-  /** Tailwind text class — e.g. `text-sector-fintech`. */
+  /** Tailwind text class — e.g. `text-sector-wholesale`. */
   textClass: string;
-  /** Tailwind background class — e.g. `bg-sector-fintech`. */
+  /** Tailwind background class — e.g. `bg-sector-wholesale`. */
   bgClass: string;
-  /** Tailwind border class — e.g. `border-sector-fintech`. */
+  /** Tailwind border class — e.g. `border-sector-wholesale`. */
   borderClass: string;
   /** Soft tinted background (10% mix) suitable for pills on a light surface. */
   softBgClass: string;
 };
 
+const HEX: Record<SectorKey, string> = {
+  wholesale: "#378ADD",
+  fmcg: "#1D9E75",
+  distribution: "#BA7517",
+  manufacturing: "#E24B4A",
+  agriculture: "#7F77DD",
+  fuel: "#D4537E",
+  hardware: "#888780",
+  contact: "#D85A30",
+};
+
+function buildTheme(label: SectorLabel): SectorTheme {
+  const key = label.toLowerCase() as SectorKey;
+  return {
+    key,
+    label,
+    hex: HEX[key],
+    textClass: `text-sector-${key}`,
+    bgClass: `bg-sector-${key}`,
+    borderClass: `border-sector-${key}`,
+    softBgClass: `bg-sector-${key}/10`,
+  };
+}
+
 export const SECTOR_THEMES: Record<SectorKey, SectorTheme> = {
-  fintech: {
-    key: "fintech",
-    label: "Fintech",
-    hex: "#1f5fa6",
-    textClass: "text-sector-fintech",
-    bgClass: "bg-sector-fintech",
-    borderClass: "border-sector-fintech",
-    softBgClass: "bg-sector-fintech/10",
-  },
-  ai: {
-    key: "ai",
-    label: "AI",
-    hex: "#6d28d9",
-    textClass: "text-sector-ai",
-    bgClass: "bg-sector-ai",
-    borderClass: "border-sector-ai",
-    softBgClass: "bg-sector-ai/10",
-  },
-  assets: {
-    key: "assets",
-    label: "Digital Assets",
-    hex: "#c9a55a",
-    textClass: "text-sector-assets",
-    bgClass: "bg-sector-assets",
-    borderClass: "border-sector-assets",
-    softBgClass: "bg-sector-assets/10",
-  },
-  music: {
-    key: "music",
-    label: "Music",
-    hex: "#be123c",
-    textClass: "text-sector-music",
-    bgClass: "bg-sector-music",
-    borderClass: "border-sector-music",
-    softBgClass: "bg-sector-music/10",
-  },
-  entertainment: {
-    key: "entertainment",
-    label: "Entertainment",
-    hex: "#c2410c",
-    textClass: "text-sector-entertainment",
-    bgClass: "bg-sector-entertainment",
-    borderClass: "border-sector-entertainment",
-    softBgClass: "bg-sector-entertainment/10",
-  },
-  ops: {
-    key: "ops",
-    label: "Operations",
-    hex: "#3b3f47",
-    textClass: "text-sector-ops",
-    bgClass: "bg-sector-ops",
-    borderClass: "border-sector-ops",
-    softBgClass: "bg-sector-ops/10",
-  },
+  wholesale: buildTheme("Wholesale"),
+  fmcg: buildTheme("FMCG"),
+  distribution: buildTheme("Distribution"),
+  manufacturing: buildTheme("Manufacturing"),
+  agriculture: buildTheme("Agriculture"),
+  fuel: buildTheme("Fuel"),
+  hardware: buildTheme("Hardware"),
+  contact: buildTheme("Contact"),
 };
 
 /**
- * Resolve a sector key (or arbitrary string) to its theme. Falls back to the
- * neutral `ops` theme when the key isn't recognised, so callers never have to
- * branch on `undefined`.
+ * Resolve a sector key or label (or arbitrary string) to its theme. Falls back
+ * to the Wholesale theme when the key isn't recognised, so callers never have
+ * to branch on `undefined`.
  */
 export function getSectorTheme(key: string | null | undefined): SectorTheme {
-  if (!key) return SECTOR_THEMES.ops;
+  if (!key) return SECTOR_THEMES.wholesale;
   const normalised = key.toLowerCase() as SectorKey;
-  return SECTOR_THEMES[normalised] ?? SECTOR_THEMES.ops;
+  return SECTOR_THEMES[normalised] ?? SECTOR_THEMES.wholesale;
 }
 
 /** Convenience accessor for callers that only need the raw hex. */

@@ -1,11 +1,7 @@
 import Container from "@/components/Container";
+import Button from "@/components/Button";
 
-// Host-neutral root 404. Serves as the fallback when Next.js cannot match a
-// URL to any route group (e.g. unmatched top-level URLs outside (marketing)).
-// The marketing tree overrides this with its own branded not-found that links
-// into marketing-only pages; keeping this one link-free so it is safe on the
-// indaba portal host as well.
-export default function RootNotFound() {
+export default function NotFound() {
   return (
     <section className="min-h-screen flex items-center pt-32 md:pt-40 pb-24">
       <Container>
@@ -18,6 +14,14 @@ export default function RootNotFound() {
         <p className="mt-8 max-w-xl text-[16px] text-white/70">
           The page you&apos;re looking for doesn&apos;t exist or has been moved.
         </p>
+        <div className="mt-10 flex flex-col sm:flex-row gap-3 sm:gap-4">
+          <Button href="/" variant="primary">
+            RETURN HOME
+          </Button>
+          <Button href="/contact" variant="ghost">
+            CONTACT US
+          </Button>
+        </div>
       </Container>
     </section>
   );

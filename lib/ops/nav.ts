@@ -29,7 +29,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     href: "/indaba/directory",
     label: "Directory",
-    roles: ["admin", "ops"],
+    roles: ["admin", "ops", "bd"],
   },
   {
     href: "/indaba/graph",

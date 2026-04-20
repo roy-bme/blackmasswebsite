@@ -1,6 +1,7 @@
 import Card from "@/components/ops/ui/Card";
 import EmptyState from "@/components/ops/ui/EmptyState";
 import Pill, { type PillTone } from "@/components/ops/ui/Pill";
+import ZitfSummaryTile from "@/components/ops/Zitf/ZitfSummaryTile";
 import { cn } from "@/lib/ops/cn";
 import { requireModuleAccess } from "@/lib/ops/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -14,6 +15,7 @@ import type {
   User,
   Zone,
 } from "@/types/ops";
+import { canViewZitf, type ZitfOpsSummary } from "@/types/zitf";
 
 const STAGE_ORDER: BusinessStage[] = [
   "identified",
@@ -79,6 +81,7 @@ export default async function DashboardPage({
   const isOps = user.role === "ops";
   const canSeeIntros = user.role === "admin" || user.role === "bd";
   const canSeeZones = isAdmin || isOps;
+  const canSeeZitf = canViewZitf(user.role);
 
   const [
     businessesRes,
@@ -90,6 +93,7 @@ export default async function DashboardPage({
     tasksRes,
     zonesRes,
     usersRes,
+    zitfSummaryRes,
   ] = await Promise.all([
     supabase
       .from("businesses")
@@ -127,6 +131,11 @@ export default async function DashboardPage({
       ? supabase.from("zones").select("*").order("name")
       : (Promise.resolve({ data: [] as Zone[] }) as Promise<DataOnly<Zone>>),
     supabase.from("users").select("id, name"),
+    canSeeZitf
+      ? supabase.from("v_zitf_ops_summary").select("*").maybeSingle()
+      : (Promise.resolve({ data: null }) as Promise<{
+          data: ZitfOpsSummary | null;
+        }>),
   ]);
 
   const businesses = (businessesRes.data ?? []) as BusinessLite[];
@@ -177,6 +186,8 @@ export default async function DashboardPage({
       const bDue = b.due_date ?? "9999-12-31";
       return aDue.localeCompare(bDue);
     });
+
+  const zitfSummary = (zitfSummaryRes.data ?? null) as ZitfOpsSummary | null;
 
   const zones = (zonesRes.data ?? []) as Zone[];
   // Compute zone membership by lat/lng bounds rather than relying on the
@@ -240,6 +251,8 @@ export default async function DashboardPage({
         />
         <MetricCard label="Open tasks" value={openTasksCount.toString()} />
       </div>
+
+      {canSeeZitf ? <ZitfSummaryTile summary={zitfSummary} /> : null}
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="space-y-4">

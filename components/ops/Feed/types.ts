@@ -34,6 +34,7 @@ export const ROLE_AVATAR_RING: Record<UserRole, string> = {
   admin: "ring-2 ring-purple-400/60",
   ops: "ring-2 ring-blue-400/60",
   bd: "ring-2 ring-orange-400/60",
+  compliance: "ring-2 ring-teal-400/60",
 };
 
 export type ActivityWithReplies = Activity & {

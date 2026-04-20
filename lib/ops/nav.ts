@@ -51,6 +51,11 @@ export const NAV_ITEMS: NavItem[] = [
     label: "Ops feed",
     roles: ["admin", "ops", "bd"],
   },
+  {
+    href: "/indaba/zitf",
+    label: "ZITF",
+    roles: ["admin", "ops", "bd", "compliance"],
+  },
 ];
 
 export function navItemsForRole(role: UserRole): NavItem[] {

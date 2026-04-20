@@ -21,6 +21,7 @@ const ROLE_TONE: Record<UserRole, "ink" | "success" | "info"> = {
   admin: "ink",
   ops: "success",
   bd: "info",
+  compliance: "info",
 };
 
 /**

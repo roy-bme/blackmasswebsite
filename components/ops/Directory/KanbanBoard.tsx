@@ -3,14 +3,16 @@
 import {
   DndContext,
   PointerSensor,
+  TouchSensor,
   useDroppable,
   useSensor,
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
+import EmptyState from "@/components/ops/ui/EmptyState";
 import Pill from "@/components/ops/ui/Pill";
 import { cn } from "@/lib/ops/cn";
 import { getSectorTheme } from "@/lib/ops/sector-colors";
@@ -41,9 +43,38 @@ export default function KanbanBoard({
   );
   const [error, setError] = useState<string | null>(null);
 
+  // Clear optimistic entries once the server has confirmed the new stage. Any
+  // id whose server-side stage now matches the optimistic column can be
+  // dropped from the overlay so stale entries don't linger across refetches.
+  useEffect(() => {
+    setOptimistic((prev) => {
+      let changed = false;
+      const next: Record<string, KanbanColumnKey> = {};
+      for (const [id, column] of Object.entries(prev)) {
+        const b = businesses.find((x) => x.id === id);
+        if (!b) {
+          next[id] = column;
+          continue;
+        }
+        if (columnForStage(b.onboarding_stage) === column) {
+          changed = true;
+          continue;
+        }
+        next[id] = column;
+      }
+      return changed ? next : prev;
+    });
+  }, [businesses]);
+
+  // Both sensors use a delay-based activation so that cards accept clicks
+  // instantly but only enter a drag after a deliberate hold — on mobile this
+  // lets the page keep scrolling when the user merely swipes over a card.
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 4 },
+      activationConstraint: { delay: 200, tolerance: 8 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 200, tolerance: 8 },
     }),
   );
 
@@ -87,24 +118,37 @@ export default function KanbanBoard({
     setOptimistic((prev) => ({ ...prev, [businessId]: targetColumn }));
     setError(null);
 
-    const supabase = createSupabaseBrowserClient();
-    const { error: updateError } = await supabase
-      .from("businesses")
-      .update({ onboarding_stage: column.defaultStage })
-      .eq("id", businessId);
+    try {
+      const supabase = createSupabaseBrowserClient();
+      const { data, error: updateError } = await supabase
+        .from("businesses")
+        .update({ onboarding_stage: column.defaultStage })
+        .eq("id", businessId)
+        .select("id, onboarding_stage");
 
-    if (updateError) {
+      if (updateError) throw new Error(updateError.message);
+      // .select() returns [] when RLS filters the row out even though the
+      // update technically "succeeded" — treat that as an auth failure.
+      if (!data || data.length === 0) {
+        throw new Error(
+          "Stage update was not persisted. Check your permissions.",
+        );
+      }
+
+      router.refresh();
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Unable to update stage.";
       setOptimistic((prev) => {
         const next = { ...prev };
         delete next[businessId];
         return next;
       });
-      setError(updateError.message);
-      return;
+      setError(message);
     }
-
-    router.refresh();
   }
+
+  const totalCount = businesses.length;
 
   return (
     <div className="space-y-2">
@@ -116,23 +160,31 @@ export default function KanbanBoard({
           {error}
         </p>
       ) : null}
-      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-        <div className="-mx-4 overflow-x-auto px-4 pb-2 md:mx-0 md:overflow-visible md:px-0">
-          <div className="grid min-w-[900px] grid-cols-4 gap-3 md:min-w-0">
-            {KANBAN_COLUMNS.map((col) => (
-              <Column
-                key={col.key}
-                columnKey={col.key}
-                label={col.label}
-                count={grouped[col.key].length}
-                businesses={grouped[col.key]}
-                canEdit={canEdit}
-                onOpen={onOpen}
-              />
-            ))}
+      {totalCount === 0 ? (
+        <EmptyState
+          eyebrow="Directory"
+          title="No businesses match"
+          description="Clear the filters or broaden the search to see more results."
+        />
+      ) : (
+        <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+          <div className="-mx-4 overflow-x-auto px-4 pb-2 md:mx-0 md:overflow-visible md:px-0">
+            <div className="grid min-w-[900px] grid-cols-4 gap-3 md:min-w-0">
+              {KANBAN_COLUMNS.map((col) => (
+                <Column
+                  key={col.key}
+                  columnKey={col.key}
+                  label={col.label}
+                  count={grouped[col.key].length}
+                  businesses={grouped[col.key]}
+                  canEdit={canEdit}
+                  onOpen={onOpen}
+                />
+              ))}
+            </div>
           </div>
-        </div>
-      </DndContext>
+        </DndContext>
+      )}
     </div>
   );
 }

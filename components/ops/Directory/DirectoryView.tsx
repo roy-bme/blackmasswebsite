@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import type { UserRole } from "@/types/ops";
 
 import BusinessDetailDialog from "./BusinessDetailDialog";
 import BusinessList from "./BusinessList";
-import DirectoryFilters, { type ChipFilter } from "./DirectoryFilters";
+import DirectoryFilters, {
+  EMPTY_FILTERS,
+  type DirectoryFilterState,
+} from "./DirectoryFilters";
 import KanbanBoard from "./KanbanBoard";
 import ViewToggle, { type DirectoryViewMode } from "./ViewToggle";
 import type { DirectoryBusiness, DirectoryZone } from "./types";
@@ -42,14 +45,18 @@ export default function DirectoryView({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const [chip, setChip] = useState<ChipFilter>("all");
-  const [sector, setSector] = useState<string>("");
-  const [zoneId, setZoneId] = useState<string>("");
-  const [search, setSearch] = useState<string>("");
+  const [filters, setFilters] = useState<DirectoryFilterState>(EMPTY_FILTERS);
 
   const [mode, setMode] = useState<DirectoryViewMode>(initialViewMode);
   const [modeOverridden, setModeOverridden] = useState(false);
   const [openId, setOpenId] = useState<string | null>(initialOpenId);
+
+  const patchFilters = useCallback(
+    (patch: Partial<DirectoryFilterState>) => {
+      setFilters((prev) => ({ ...prev, ...patch }));
+    },
+    [],
+  );
 
   // Track the initial id so we only auto-open once per incoming URL change.
   useEffect(() => {
@@ -69,21 +76,15 @@ export default function DirectoryView({
   }, [modeOverridden]);
 
   const filtered = useMemo(() => {
-    const query = search.trim().toLowerCase();
+    const query = filters.search.trim().toLowerCase();
     return businesses.filter((b) => {
-      if (chip === "launch6" && !b.launch_6) return false;
-      if (chip === "formal" && b.type !== "formal") return false;
-      if (chip === "informal" && b.type !== "informal") return false;
-      if (chip === "incomplete") {
-        const incomplete = !b.decision_maker_name || !b.phone;
-        if (!incomplete) return false;
-      }
-      if (sector && b.sector !== sector) return false;
-      if (zoneId && b.zone_id !== zoneId) return false;
+      if (filters.sector && b.sector !== filters.sector) return false;
+      if (filters.zoneId && b.zone_id !== filters.zoneId) return false;
+      if (filters.launch6 && !b.launch_6) return false;
       if (query && !b.name.toLowerCase().includes(query)) return false;
       return true;
     });
-  }, [businesses, chip, sector, zoneId, search]);
+  }, [businesses, filters]);
 
   const activeBusiness = useMemo(
     () => (openId ? businesses.find((b) => b.id === openId) ?? null : null),
@@ -117,15 +118,9 @@ export default function DirectoryView({
     <div className="space-y-3">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <DirectoryFilters
-          chip={chip}
-          sector={sector}
-          zoneId={zoneId}
-          search={search}
+          filters={filters}
           zones={zones}
-          onChip={setChip}
-          onSector={setSector}
-          onZone={setZoneId}
-          onSearch={setSearch}
+          onChange={patchFilters}
         />
         <ViewToggle mode={mode} onChange={handleModeChange} />
       </div>

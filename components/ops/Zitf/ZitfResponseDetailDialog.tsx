@@ -15,6 +15,7 @@ import {
   ZITF_SPEND_BAND_LABEL,
   ZITF_STATUS_LABEL,
   ZITF_TABLES,
+  hasCrossborderSupplierExposure,
   type ZitfResponse,
   type ZitfStatus,
 } from "@/types/zitf";
@@ -31,6 +32,7 @@ const STATUS_TONE: Record<ZitfStatus, PillTone> = {
   contacted: "ink",
   pilot_candidate: "warning",
   rejected: "danger",
+  duplicate: "neutral",
 };
 
 const DATE_FMT = new Intl.DateTimeFormat("en-GB", {
@@ -119,9 +121,9 @@ export default function ZitfResponseDetailDialog({
       <Dialog.Body className="space-y-5">
         <Section title="Contact">
           <Grid>
-            <Field label="Name" value={row.contact_name} />
-            <Field label="Email" value={row.contact_email} />
-            <Field label="Phone" value={row.contact_phone} />
+            <Field label="Name" value={row.decision_maker_name} />
+            <Field label="Email" value={row.email} />
+            <Field label="Phone" value={row.phone} />
             <Field
               label="Consent follow-up"
               value={row.consent_followup_contact ? "Yes" : "No"}
@@ -142,11 +144,11 @@ export default function ZitfResponseDetailDialog({
             <Field
               label="Cross-border supplier"
               value={
-                row.crossborder_supplier_exposure === null
-                  ? null
-                  : row.crossborder_supplier_exposure
+                row.supplier_locations && row.supplier_locations.length > 0
+                  ? hasCrossborderSupplierExposure(row.supplier_locations)
                     ? "Yes"
                     : "No"
+                  : null
               }
             />
             <Field

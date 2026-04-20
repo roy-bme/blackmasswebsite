@@ -15,7 +15,6 @@ import {
   ZITF_PAIN_HEADACHES,
   ZITF_PAYMENT_METHODS,
   ZITF_RISK_MITIGATION_OPTIONS,
-  ZITF_SECTORS,
   ZITF_SPEND_BAND_LABEL,
   ZITF_SPEND_BANDS,
   ZITF_SUPPLIER_LOCATIONS,
@@ -25,7 +24,6 @@ import {
   type ZitfDelayImpact,
   type ZitfPaperFormInput,
   type ZitfRiskMitigationOption,
-  type ZitfSector,
   type ZitfSpendBand,
   type ZitfTeamSizeBand,
 } from "@/types/zitf";
@@ -40,7 +38,7 @@ type FormState = {
   email: string;
   phone: string;
   stand_number: string;
-  sector: "" | ZitfSector;
+  sector: string;
   team_size_band: "" | ZitfTeamSizeBand;
   supplier_locations: string[];
   customer_types: string[];
@@ -130,7 +128,7 @@ export default function PaperResponseForm({
       email: form.email.trim() || null,
       phone: form.phone.trim() || null,
       stand_number: form.stand_number.trim(),
-      sector: form.sector || null,
+      sector: form.sector.trim() || null,
       team_size_band: form.team_size_band || null,
       supplier_locations: form.supplier_locations,
       customer_types: form.customer_types,
@@ -236,20 +234,13 @@ export default function PaperResponseForm({
         description="Where the business sits — sector, size, and who they transact with."
       >
         <div className="grid gap-4 md:grid-cols-2">
-          <Select
+          <Input
             label="Sector"
+            name="sector"
             value={form.sector}
-            onChange={(e) =>
-              patch("sector", e.target.value as FormState["sector"])
-            }
-          >
-            <option value="">— Not answered —</option>
-            {ZITF_SECTORS.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </Select>
+            onChange={(e) => patch("sector", e.target.value)}
+            hint="Free text — matches the digital form (e.g. wholesale, logistics)."
+          />
 
           <Select
             label="Team size"

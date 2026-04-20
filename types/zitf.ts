@@ -42,12 +42,15 @@ export type ZitfDelayImpact =
   | "deal_breaker";
 
 /**
- * Supplier location allowlist. The "foreign" subset drives the cross-border
- * exposure flag: any value in `ZITF_FOREIGN_SUPPLIER_LOCATIONS` counts as a
- * cross-border supplier.
+ * Supplier location allowlist. Mirrors `SUPPLIER_LOCATIONS` in
+ * `supabase/functions/zitf-submit/index.ts` exactly. The "foreign" subset
+ * drives the cross-border exposure flag: any value in
+ * `ZITF_FOREIGN_SUPPLIER_LOCATIONS` counts as a cross-border supplier.
  */
 export const ZITF_SUPPLIER_LOCATIONS = [
-  "Zimbabwe",
+  "Bulawayo",
+  "Harare",
+  "Other Zim city",
   "South Africa",
   "China",
   "Dubai / UAE",
@@ -74,22 +77,13 @@ export function hasCrossborderSupplierExposure(
   );
 }
 
-/** Sector bucket the respondent identifies with. Mirrors the DB allowlist. */
-export const ZITF_SECTORS = [
-  "Wholesale",
-  "FMCG",
-  "Distribution",
-  "Manufacturing",
-  "Agriculture",
-  "Fuel",
-  "Hardware",
-  "Retail",
-  "Services",
-  "Other",
-] as const;
-export type ZitfSector = (typeof ZITF_SECTORS)[number];
+/**
+ * Sector is free text in both the digital and paper forms — the DB does
+ * not constrain it. Kept as `string | null` on the row and as a plain
+ * input on the paper form for parity with the digital submission path.
+ */
 
-/** Team-size bucket. */
+/** Team-size bucket. Mirrors `TEAM_SIZES` in the edge function. */
 export const ZITF_TEAM_SIZE_BANDS = [
   "1-5",
   "6-20",
@@ -99,40 +93,44 @@ export const ZITF_TEAM_SIZE_BANDS = [
 ] as const;
 export type ZitfTeamSizeBand = (typeof ZITF_TEAM_SIZE_BANDS)[number];
 
-/** Payment methods used to pay suppliers / receive from customers. */
+/**
+ * Payment methods used to pay suppliers / receive from customers. Mirrors
+ * `PAYMENT_METHODS` in the edge function.
+ */
 export const ZITF_PAYMENT_METHODS = [
-  "Bank transfer",
   "Cash (USD)",
-  "Cash (ZWL)",
-  "Mobile money",
-  "Card",
-  "Crypto / stablecoin",
-  "Broker / middleman",
-  "Other",
+  "Cash (ZiG)",
+  "Bank transfer (local)",
+  "Bank transfer (foreign)",
+  "EcoCash",
+  "InnBucks",
+  "ZIPIT",
+  "Mukuru / WorldRemit",
+  "Crypto / USDT",
+  "Card (POS / online)",
 ] as const;
 export type ZitfPaymentMethod = (typeof ZITF_PAYMENT_METHODS)[number];
 
-/** Top-headaches allowlist. */
+/** Top-headaches allowlist. Mirrors `HEADACHES` in the edge function. */
 export const ZITF_PAIN_HEADACHES = [
-  "Cashflow",
-  "Access to FX",
-  "Cross-border delays",
-  "Supplier fraud",
-  "Banking fees",
-  "Compliance / KYC",
-  "Staff / skills",
-  "Other",
+  "Payment delays",
+  "High transaction fees",
+  "Transaction limits",
+  "Fraud / scams",
+  "No proof of payment",
+  "Parallel rate disputes",
+  "Cross-border FX friction",
+  "Slow reconciliation",
+  "Supplier trust",
 ] as const;
 export type ZitfPainHeadache = (typeof ZITF_PAIN_HEADACHES)[number];
 
-/** Customer-type allowlist. */
+/** Customer-type allowlist. Mirrors `CUSTOMER_TYPES` in the edge function. */
 export const ZITF_CUSTOMER_TYPES = [
   "Individuals",
-  "SMEs",
-  "Corporates",
-  "Government",
-  "Export",
-  "Other",
+  "Other businesses (B2B)",
+  "Government / NGO",
+  "Export market",
 ] as const;
 export type ZitfCustomerType = (typeof ZITF_CUSTOMER_TYPES)[number];
 
@@ -163,7 +161,7 @@ export type ZitfResponse = {
   stand_number: string | null;
 
   // Business profile.
-  sector: ZitfSector | null;
+  sector: string | null;
   team_size_band: ZitfTeamSizeBand | null;
   supplier_locations: string[] | null;
   customer_types: string[] | null;
@@ -215,7 +213,7 @@ export type ZitfPaperFormInput = {
   email: string | null;
   phone: string | null;
   stand_number: string;
-  sector: ZitfSector | null;
+  sector: string | null;
   team_size_band: ZitfTeamSizeBand | null;
   supplier_locations: string[];
   customer_types: string[];
@@ -293,13 +291,16 @@ export const ZITF_DELAY_IMPACT_LABEL: Record<ZitfDelayImpact, string> = {
   deal_breaker: "Deal breaker",
 };
 
-/** Free-text options for `paid_first_time_risk_mitigation`. */
+/**
+ * Risk-mitigation options. Mirrors `RISK_MITIGATION` in the edge function
+ * exactly — the scoring function keys off `"Use a broker or middleman"`.
+ */
 export const ZITF_RISK_MITIGATION_OPTIONS = [
-  "Pay full upfront",
-  "Pay a deposit",
+  "Pay deposit only",
+  "Pay on delivery",
+  "Request references",
   "Use a broker or middleman",
-  "Use escrow / third-party hold",
-  "Refuse to deal with unknowns",
+  "Take the risk",
   "Other",
 ] as const;
 export type ZitfRiskMitigationOption =

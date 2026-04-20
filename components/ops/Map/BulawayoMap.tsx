@@ -330,13 +330,21 @@ export default function BulawayoMap({
 
   return (
     <div
-      ref={containerRef}
       className={cn(
         "h-[60vh] w-full md:h-[70vh]",
         pinDropMode && "indaba-pin-drop-cursor",
       )}
-      role="application"
-      aria-label="Bulawayo business map"
-    />
+    >
+      {/* Wrapper needed: Leaflet mutates containerRef's className (adds
+          leaflet-container, leaflet-touch, etc). React re-renders will wipe
+          these if we put dynamic classes on the ref'd element. Keep dynamic
+          classes on this wrapper, leave inner div alone. */}
+      <div
+        ref={containerRef}
+        className="h-full w-full"
+        role="application"
+        aria-label="Bulawayo business map"
+      />
+    </div>
   );
 }

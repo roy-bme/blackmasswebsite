@@ -54,6 +54,6 @@ a:focus-visible {
 
 /* Pin-drop mode: override Leaflet's default grab cursor so ops users get a
    crosshair over the tile canvas when dropping a pin for a new business. */
-.indaba-pin-drop-cursor.leaflet-container {
+.indaba-pin-drop-cursor .leaflet-container {
   cursor: crosshair;
 }

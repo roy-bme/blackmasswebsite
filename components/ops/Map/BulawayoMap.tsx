@@ -324,6 +324,18 @@ export default function BulawayoMap({
     return undefined;
   }, [pinDropMode]);
 
+  // Leaflet caches the container's pixel size and will not re-tile when the
+  // container's layout shifts (e.g. banner overlay appearing). Nudge it after
+  // a paint to force tile repaint on pin-drop toggle.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const timer = window.setTimeout(() => {
+      mapRef.current?.invalidateSize();
+    }, 10);
+    return () => window.clearTimeout(timer);
+  }, [pinDropMode]);
+
   return (
     <div
       ref={containerRef}

@@ -82,6 +82,16 @@ export default function MapView({
     [quickAddMode],
   );
 
+  const enterPinDrop = useCallback(() => {
+    setPinDropMode(true);
+    setPendingCoords(null);
+    setDialogOpen(false);
+  }, []);
+
+  const toggleQuickAdd = useCallback(() => {
+    setQuickAddMode((prev) => !prev);
+  }, []);
+
   return (
     <div className="space-y-3">
       <MapFilters
@@ -107,15 +117,9 @@ export default function MapView({
             quickAddMode={quickAddMode}
             businesses={businesses}
             currentUserId={currentUserId}
-            onEnterPinDrop={() => {
-              setPinDropMode(true);
-              setPendingCoords(null);
-              setDialogOpen(false);
-            }}
+            onEnterPinDrop={enterPinDrop}
             onExitPinDrop={exitPinDrop}
-            onToggleQuickAdd={() => {
-              setQuickAddMode((prev) => !prev);
-            }}
+            onToggleQuickAdd={toggleQuickAdd}
           />
         ) : null}
         {toast ? (

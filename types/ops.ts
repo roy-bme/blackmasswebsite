@@ -41,7 +41,7 @@ export type Rating1to5 = 1 | 2 | 3 | 4 | 5;
 
 // ─── enums ───────────────────────────────────────────────────────────────────
 
-export type UserRole = "admin" | "ops" | "bd";
+export type UserRole = "admin" | "ops" | "bd" | "compliance";
 
 export type BusinessType = "formal" | "informal";
 

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
+import AddBusinessDialog from "./AddBusinessDialog";
 import MapActions from "./MapActions";
 import MapFilters, { type MapFilter } from "./MapFilters";
 import MapLegend from "./MapLegend";
@@ -33,6 +34,53 @@ export default function MapView({
   currentUserId,
 }: MapViewProps) {
   const [filter, setFilter] = useState<MapFilter>("all");
+  const [pinDropMode, setPinDropMode] = useState(false);
+  const [quickAddMode, setQuickAddMode] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [pendingCoords, setPendingCoords] = useState<
+    { lat: number; lng: number } | null
+  >(null);
+  const [lastSector, setLastSector] = useState<string>("");
+  const [toast, setToast] = useState<string | null>(null);
+
+  const handleMapClick = useCallback(
+    (coords: { lat: number; lng: number }) => {
+      if (!pinDropMode) return;
+      setPendingCoords(coords);
+      setDialogOpen(true);
+    },
+    [pinDropMode],
+  );
+
+  const exitPinDrop = useCallback(() => {
+    setPinDropMode(false);
+    setQuickAddMode(false);
+    setDialogOpen(false);
+    setPendingCoords(null);
+  }, []);
+
+  const handleDialogClose = useCallback(() => {
+    setDialogOpen(false);
+    setPendingCoords(null);
+    if (!quickAddMode) {
+      setPinDropMode(false);
+    }
+  }, [quickAddMode]);
+
+  const handleSaved = useCallback(
+    ({ sector }: { sector: string }) => {
+      setLastSector(sector);
+      setDialogOpen(false);
+      setPendingCoords(null);
+      if (quickAddMode) {
+        setToast("Pinned. Tap map for next.");
+        window.setTimeout(() => setToast(null), 2200);
+      } else {
+        setPinDropMode(false);
+      }
+    },
+    [quickAddMode],
+  );
 
   return (
     <div className="space-y-3">
@@ -50,17 +98,51 @@ export default function MapView({
           introductions={introductions}
           filter={filter}
           showIntros={canSeeIntros}
+          pinDropMode={pinDropMode && canAddRecords}
+          onMapClick={handleMapClick}
         />
         {canAddRecords ? (
           <MapActions
-            zones={zones}
+            pinDropMode={pinDropMode}
+            quickAddMode={quickAddMode}
             businesses={businesses}
             currentUserId={currentUserId}
+            onEnterPinDrop={() => {
+              setPinDropMode(true);
+              setPendingCoords(null);
+              setDialogOpen(false);
+            }}
+            onExitPinDrop={exitPinDrop}
+            onToggleQuickAdd={() => {
+              setQuickAddMode((prev) => !prev);
+            }}
           />
+        ) : null}
+        {toast ? (
+          <div
+            role="status"
+            aria-live="polite"
+            className="pointer-events-none absolute bottom-4 left-1/2 z-[600] -translate-x-1/2 rounded-md bg-zimx-black/90 px-3 py-1.5 text-[12px] text-white shadow-lg"
+          >
+            {toast}
+          </div>
         ) : null}
       </div>
 
       <MapLegend />
+
+      {canAddRecords ? (
+        <AddBusinessDialog
+          open={dialogOpen && pendingCoords !== null}
+          onClose={handleDialogClose}
+          zones={zones}
+          currentUserId={currentUserId}
+          coords={pendingCoords}
+          quickAddMode={quickAddMode}
+          lastSector={lastSector}
+          onSaved={handleSaved}
+        />
+      ) : null}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 
 import Button from "@/components/ops/ui/Button";
 import Dialog from "@/components/ops/ui/Dialog";
@@ -9,7 +9,9 @@ import Input from "@/components/ops/ui/Input";
 import Select from "@/components/ops/ui/Select";
 import Textarea from "@/components/ops/ui/Textarea";
 import { SECTOR_LIST } from "@/lib/ops/sector-colors";
+import { formatCoords, reverseGeocode } from "@/lib/ops/reverse-geocode";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { getZoneBounds, pointInBounds } from "@/lib/ops/zone-bounds";
 
 import type { MapZone } from "./types";
 
@@ -18,31 +20,104 @@ type AddBusinessDialogProps = {
   onClose: () => void;
   zones: MapZone[];
   currentUserId: string;
+  /** Lat/lng captured from the user's map click. Required for the dialog to
+   *  submit — if null we show a "tap the map first" state. */
+  coords: { lat: number; lng: number } | null;
+  /** Quick-add collapses the form to just name/sector/notes and keeps the
+   *  map in pin-drop mode after save. */
+  quickAddMode: boolean;
+  /** Last sector chosen during a quick-add session so consecutive pins on
+   *  the same street don't re-pick the dropdown each time. */
+  lastSector: string;
+  /** Fired after a successful insert. The map coordinator uses this to keep
+   *  pin-drop mode on (quick-add) and capture the sector. */
+  onSaved: (info: { sector: string }) => void;
 };
 
-const EMPTY_FORM = {
-  name: "",
-  sector: "",
-  zone_id: "",
-  est_monthly_volume: "",
-  notes: "",
+type FormState = {
+  name: string;
+  sector: string;
+  zone_id: string;
+  est_monthly_volume: string;
+  notes: string;
 };
+
+function emptyForm(sector: string): FormState {
+  return {
+    name: "",
+    sector,
+    zone_id: "",
+    est_monthly_volume: "",
+    notes: "",
+  };
+}
 
 export default function AddBusinessDialog({
   open,
   onClose,
   zones,
   currentUserId,
+  coords,
+  quickAddMode,
+  lastSector,
+  onSaved,
 }: AddBusinessDialogProps) {
   const router = useRouter();
-  const [form, setForm] = useState(EMPTY_FORM);
+  const [form, setForm] = useState<FormState>(() => emptyForm(lastSector));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [address, setAddress] = useState<string | null>(null);
+  const [addressLoading, setAddressLoading] = useState(false);
+
+  // When the dialog opens for a fresh pin drop, reset the form (keeping the
+  // last sector for continuity) and re-run reverse geocoding.
+  useEffect(() => {
+    if (!open) return;
+    setForm(emptyForm(lastSector));
+    setError(null);
+    setAddress(null);
+  }, [open, lastSector]);
+
+  // Auto-resolve zone_id via point-in-bounds whenever coords change.
+  useEffect(() => {
+    if (!open || !coords) return;
+    for (const zone of zones) {
+      const bounds = getZoneBounds({
+        name: zone.name,
+        centre_lat: zone.centre_lat,
+        centre_lng: zone.centre_lng,
+      });
+      if (bounds && pointInBounds(coords, bounds)) {
+        setForm((prev) =>
+          prev.zone_id ? prev : { ...prev, zone_id: zone.id },
+        );
+        return;
+      }
+    }
+  }, [open, coords, zones]);
+
+  // Reverse geocode the dropped point.
+  useEffect(() => {
+    if (!open || !coords) {
+      setAddress(null);
+      setAddressLoading(false);
+      return;
+    }
+    const controller = new AbortController();
+    setAddressLoading(true);
+    setAddress(null);
+    reverseGeocode(coords.lat, coords.lng, controller.signal)
+      .then((resolved) => setAddress(resolved))
+      .catch(() => setAddress(null))
+      .finally(() => setAddressLoading(false));
+    return () => controller.abort();
+  }, [open, coords]);
 
   function handleClose() {
     if (submitting) return;
-    setForm(EMPTY_FORM);
+    setForm(emptyForm(lastSector));
     setError(null);
+    setAddress(null);
     onClose();
   }
 
@@ -50,6 +125,10 @@ export default function AddBusinessDialog({
     event.preventDefault();
     setError(null);
 
+    if (!coords) {
+      setError("Tap the map first to place the pin.");
+      return;
+    }
     if (!form.name.trim()) {
       setError("Name is required.");
       return;
@@ -58,21 +137,9 @@ export default function AddBusinessDialog({
       setError("Sector is required.");
       return;
     }
-    if (!form.zone_id) {
-      setError("Zone is required.");
-      return;
-    }
-
-    const zone = zones.find((z) => z.id === form.zone_id);
-    if (!zone || zone.centre_lat == null || zone.centre_lng == null) {
-      setError("Selected zone has no coordinates.");
-      return;
-    }
 
     setSubmitting(true);
     const supabase = createSupabaseBrowserClient();
-    const lat = zone.centre_lat + (Math.random() * 0.008 - 0.004);
-    const lng = zone.centre_lng + (Math.random() * 0.008 - 0.004);
     const volume = form.est_monthly_volume
       ? Number(form.est_monthly_volume)
       : null;
@@ -81,9 +148,10 @@ export default function AddBusinessDialog({
       name: form.name.trim(),
       sector: form.sector,
       type: "formal",
-      zone_id: form.zone_id,
-      lat,
-      lng,
+      zone_id: form.zone_id || null,
+      lat: coords.lat,
+      lng: coords.lng,
+      address: address ?? null,
       est_monthly_volume: volume,
       notes: form.notes.trim() || null,
       mapped_by: currentUserId,
@@ -98,24 +166,77 @@ export default function AddBusinessDialog({
       return;
     }
 
-    setForm(EMPTY_FORM);
-    onClose();
+    onSaved({ sector: form.sector });
+    setForm(emptyForm(form.sector));
     router.refresh();
   }
 
-  const sectorOptions = SECTOR_LIST.filter((s) => s.key !== "contact").map(
-    (s) => ({ label: s.label, value: s.key }),
+  const sectorOptions = useMemo(
+    () =>
+      SECTOR_LIST.filter((s) => s.key !== "contact").map((s) => ({
+        label: s.label,
+        value: s.key,
+      })),
+    [],
   );
-  const zoneOptions = zones.map((z) => ({ label: z.name, value: z.id }));
+  const zoneOptions = useMemo(
+    () => [
+      { label: "Auto / none", value: "" },
+      ...zones.map((z) => ({ label: z.name, value: z.id })),
+    ],
+    [zones],
+  );
+
+  const locationDisplay = address
+    ? address
+    : addressLoading
+      ? "Looking up address\u2026"
+      : coords
+        ? `Bulawayo (${formatCoords(coords.lat, coords.lng)})`
+        : "—";
+
+  const submitLabel = submitting
+    ? "Saving\u2026"
+    : quickAddMode
+      ? "Save & drop next pin"
+      : "Save business";
 
   return (
     <Dialog open={open} onClose={handleClose} ariaLabel="Add business">
       <Dialog.Header>
-        <Dialog.Title>Add business</Dialog.Title>
+        <Dialog.Title>
+          {quickAddMode ? "Quick add business" : "Add business"}
+        </Dialog.Title>
         <Dialog.CloseButton onClose={handleClose} />
       </Dialog.Header>
       <form onSubmit={handleSubmit}>
         <Dialog.Body className="space-y-4">
+          {!coords ? (
+            <p className="font-mono text-[11px] uppercase tracking-tag text-zinc-500">
+              Tap the map first to place a pin.
+            </p>
+          ) : (
+            <div>
+              <p className="font-mono text-[11px] uppercase tracking-tag text-zinc-500">
+                Location
+              </p>
+              <p className="mt-1 flex items-center gap-2 border border-zinc-200 bg-zimx-offwhite px-3 py-2 text-[14px] text-zimx-black">
+                <span className="truncate">{locationDisplay}</span>
+                {addressLoading ? (
+                  <span
+                    aria-hidden="true"
+                    className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-zinc-300 border-t-zimx-black"
+                  />
+                ) : null}
+              </p>
+              {!address && !addressLoading ? (
+                <p className="mt-1 text-[11px] text-zinc-500">
+                  {formatCoords(coords.lat, coords.lng)}
+                </p>
+              ) : null}
+            </div>
+          )}
+
           <Input
             label="Name"
             name="name"
@@ -133,26 +254,30 @@ export default function AddBusinessDialog({
             options={sectorOptions}
             required
           />
-          <Select
-            label="Zone"
-            name="zone_id"
-            value={form.zone_id}
-            onChange={(e) => setForm({ ...form, zone_id: e.target.value })}
-            placeholder="Select zone"
-            options={zoneOptions}
-            required
-          />
-          <Input
-            label="Est. monthly volume (USD)"
-            name="est_monthly_volume"
-            type="number"
-            min={0}
-            inputMode="numeric"
-            value={form.est_monthly_volume}
-            onChange={(e) =>
-              setForm({ ...form, est_monthly_volume: e.target.value })
-            }
-          />
+
+          {quickAddMode ? null : (
+            <>
+              <Select
+                label="Zone"
+                name="zone_id"
+                value={form.zone_id}
+                onChange={(e) => setForm({ ...form, zone_id: e.target.value })}
+                placeholder="Auto / none"
+                options={zoneOptions}
+              />
+              <Input
+                label="Est. monthly volume (USD)"
+                name="est_monthly_volume"
+                type="number"
+                min={0}
+                inputMode="numeric"
+                value={form.est_monthly_volume}
+                onChange={(e) =>
+                  setForm({ ...form, est_monthly_volume: e.target.value })
+                }
+              />
+            </>
+          )}
           <Textarea
             label="Notes"
             name="notes"
@@ -172,8 +297,8 @@ export default function AddBusinessDialog({
           <Button type="button" variant="ghost" onClick={handleClose}>
             Cancel
           </Button>
-          <Button type="submit" variant="primary" disabled={submitting}>
-            {submitting ? "Saving…" : "Save business"}
+          <Button type="submit" variant="primary" disabled={submitting || !coords}>
+            {submitLabel}
           </Button>
         </Dialog.Footer>
       </form>

@@ -3,6 +3,7 @@ import {
   ZITF_DELAY_IMPACT_LABEL,
   ZITF_SPEND_BAND_LABEL,
   ZITF_STATUS_LABEL,
+  hasCrossborderSupplierExposure,
   type ZitfResponse,
 } from "@/types/zitf";
 
@@ -18,10 +19,32 @@ const COLUMNS: Array<{
   { header: "Channel", accessor: (r) => ZITF_CHANNEL_LABEL[r.channel] },
   { header: "Status", accessor: (r) => ZITF_STATUS_LABEL[r.status] },
   { header: "Business", accessor: (r) => r.business_name ?? "" },
-  { header: "Contact name", accessor: (r) => r.contact_name ?? "" },
-  { header: "Contact email", accessor: (r) => r.contact_email ?? "" },
-  { header: "Contact phone", accessor: (r) => r.contact_phone ?? "" },
+  { header: "Decision-maker", accessor: (r) => r.decision_maker_name ?? "" },
+  { header: "Email", accessor: (r) => r.email ?? "" },
+  { header: "Phone", accessor: (r) => r.phone ?? "" },
   { header: "Stand number", accessor: (r) => r.stand_number ?? "" },
+  { header: "Sector", accessor: (r) => r.sector ?? "" },
+  { header: "Team size", accessor: (r) => r.team_size_band ?? "" },
+  {
+    header: "Supplier locations",
+    accessor: (r) => (r.supplier_locations ?? []).join("; "),
+  },
+  {
+    header: "Customer types",
+    accessor: (r) => (r.customer_types ?? []).join("; "),
+  },
+  {
+    header: "Pay suppliers (methods)",
+    accessor: (r) => (r.pay_suppliers_methods ?? []).join("; "),
+  },
+  {
+    header: "Receive from customers (methods)",
+    accessor: (r) => (r.receive_customers_methods ?? []).join("; "),
+  },
+  {
+    header: "Top headaches",
+    accessor: (r) => (r.pain_top_headaches ?? []).join("; "),
+  },
   {
     header: "Spend band",
     accessor: (r) =>
@@ -31,7 +54,10 @@ const COLUMNS: Array<{
   },
   {
     header: "Cross-border supplier",
-    accessor: (r) => (r.crossborder_supplier_exposure ? "yes" : "no"),
+    accessor: (r) => {
+      if (!r.supplier_locations || r.supplier_locations.length === 0) return "";
+      return hasCrossborderSupplierExposure(r.supplier_locations) ? "yes" : "no";
+    },
   },
   {
     header: "Delay impact",
@@ -43,6 +69,14 @@ const COLUMNS: Array<{
   {
     header: "Risk mitigation",
     accessor: (r) => (r.paid_first_time_risk_mitigation ?? []).join("; "),
+  },
+  {
+    header: "Cross-border delay pain",
+    accessor: (r) => (r.pain_crossborder_delay ? "yes" : "no"),
+  },
+  {
+    header: "Fraud loss pain",
+    accessor: (r) => (r.pain_fraud_loss ? "yes" : "no"),
   },
   {
     header: "Consent followup",

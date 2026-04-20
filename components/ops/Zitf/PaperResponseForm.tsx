@@ -10,16 +10,24 @@ import Textarea from "@/components/ops/ui/Textarea";
 import { cn } from "@/lib/ops/cn";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
+  ZITF_CUSTOMER_TYPES,
   ZITF_DELAY_IMPACT_LABEL,
+  ZITF_PAIN_HEADACHES,
+  ZITF_PAYMENT_METHODS,
   ZITF_RISK_MITIGATION_OPTIONS,
+  ZITF_SECTORS,
   ZITF_SPEND_BAND_LABEL,
   ZITF_SPEND_BANDS,
+  ZITF_SUPPLIER_LOCATIONS,
   ZITF_TABLES,
+  ZITF_TEAM_SIZE_BANDS,
   computeIsPriorityFollowup,
   type ZitfDelayImpact,
   type ZitfPaperFormInput,
   type ZitfRiskMitigationOption,
+  type ZitfSector,
   type ZitfSpendBand,
+  type ZitfTeamSizeBand,
 } from "@/types/zitf";
 
 type PaperResponseFormProps = {
@@ -28,32 +36,44 @@ type PaperResponseFormProps = {
 
 type FormState = {
   business_name: string;
-  contact_name: string;
-  contact_email: string;
-  contact_phone: string;
+  decision_maker_name: string;
+  email: string;
+  phone: string;
   stand_number: string;
+  sector: "" | ZitfSector;
+  team_size_band: "" | ZitfTeamSizeBand;
+  supplier_locations: string[];
+  customer_types: string[];
+  pay_suppliers_methods: string[];
+  receive_customers_methods: string[];
+  pain_top_headaches: string[];
   monthly_supplier_spend_band: "" | ZitfSpendBand;
-  crossborder_supplier_exposure: "" | "yes" | "no";
   crossborder_delay_impact: "" | ZitfDelayImpact;
   paid_first_time_risk_mitigation: ZitfRiskMitigationOption[];
-  crossborder_delay_pain: boolean;
-  fraud_pain: boolean;
+  pain_crossborder_delay: boolean;
+  pain_fraud_loss: boolean;
   consent_followup_contact: boolean;
   notes: string;
 };
 
 const EMPTY_FORM: FormState = {
   business_name: "",
-  contact_name: "",
-  contact_email: "",
-  contact_phone: "",
+  decision_maker_name: "",
+  email: "",
+  phone: "",
   stand_number: "",
+  sector: "",
+  team_size_band: "",
+  supplier_locations: [],
+  customer_types: [],
+  pay_suppliers_methods: [],
+  receive_customers_methods: [],
+  pain_top_headaches: [],
   monthly_supplier_spend_band: "",
-  crossborder_supplier_exposure: "",
   crossborder_delay_impact: "",
   paid_first_time_risk_mitigation: [],
-  crossborder_delay_pain: false,
-  fraud_pain: false,
+  pain_crossborder_delay: false,
+  pain_fraud_loss: false,
   consent_followup_contact: false,
   notes: "",
 };
@@ -74,25 +94,24 @@ export default function PaperResponseForm({
     if (errors[key]) setErrors((e) => ({ ...e, [key]: undefined }));
   }
 
-  function toggleRiskMitigation(option: ZitfRiskMitigationOption) {
+  function toggleMulti<K extends keyof FormState>(key: K, option: string) {
     setForm((f) => {
-      const has = f.paid_first_time_risk_mitigation.includes(option);
-      return {
-        ...f,
-        paid_first_time_risk_mitigation: has
-          ? f.paid_first_time_risk_mitigation.filter((o) => o !== option)
-          : [...f.paid_first_time_risk_mitigation, option],
-      };
+      const current = f[key] as unknown as string[];
+      const has = current.includes(option);
+      const next = has
+        ? current.filter((o) => o !== option)
+        : [...current, option];
+      return { ...f, [key]: next } as FormState;
     });
   }
 
   function validate(): FieldErrors {
     const next: FieldErrors = {};
     if (!form.business_name.trim()) next.business_name = "Required";
-    if (!form.contact_name.trim()) next.contact_name = "Required";
+    if (!form.decision_maker_name.trim()) next.decision_maker_name = "Required";
     if (!form.stand_number.trim()) next.stand_number = "Required";
-    if (form.contact_email && !/.+@.+\..+/.test(form.contact_email)) {
-      next.contact_email = "Invalid email";
+    if (form.email && !/.+@.+\..+/.test(form.email)) {
+      next.email = "Invalid email";
     }
     return next;
   }
@@ -107,16 +126,22 @@ export default function PaperResponseForm({
 
     const payload: ZitfPaperFormInput = {
       business_name: form.business_name.trim(),
-      contact_name: form.contact_name.trim(),
-      contact_email: form.contact_email.trim() || null,
-      contact_phone: form.contact_phone.trim() || null,
+      decision_maker_name: form.decision_maker_name.trim(),
+      email: form.email.trim() || null,
+      phone: form.phone.trim() || null,
       stand_number: form.stand_number.trim(),
+      sector: form.sector || null,
+      team_size_band: form.team_size_band || null,
+      supplier_locations: form.supplier_locations,
+      customer_types: form.customer_types,
+      pay_suppliers_methods: form.pay_suppliers_methods,
+      receive_customers_methods: form.receive_customers_methods,
+      pain_top_headaches: form.pain_top_headaches,
       monthly_supplier_spend_band: form.monthly_supplier_spend_band || null,
-      crossborder_supplier_exposure: form.crossborder_supplier_exposure === "yes",
       crossborder_delay_impact: form.crossborder_delay_impact || null,
       paid_first_time_risk_mitigation: form.paid_first_time_risk_mitigation,
-      crossborder_delay_pain: form.crossborder_delay_pain,
-      fraud_pain: form.fraud_pain,
+      pain_crossborder_delay: form.pain_crossborder_delay,
+      pain_fraud_loss: form.pain_fraud_loss,
       consent_followup_contact: form.consent_followup_contact,
       notes: form.notes.trim() || null,
     };
@@ -183,27 +208,102 @@ export default function PaperResponseForm({
             hint="ZITF 2026 hall / stand reference."
           />
           <Input
-            label="Contact name *"
-            name="contact_name"
-            value={form.contact_name}
-            onChange={(e) => patch("contact_name", e.target.value)}
-            error={errors.contact_name}
+            label="Decision-maker name *"
+            name="decision_maker_name"
+            value={form.decision_maker_name}
+            onChange={(e) => patch("decision_maker_name", e.target.value)}
+            error={errors.decision_maker_name}
           />
           <Input
-            label="Contact email"
-            name="contact_email"
+            label="Email"
+            name="email"
             type="email"
-            value={form.contact_email}
-            onChange={(e) => patch("contact_email", e.target.value)}
-            error={errors.contact_email}
+            value={form.email}
+            onChange={(e) => patch("email", e.target.value)}
+            error={errors.email}
           />
           <Input
-            label="Contact phone"
-            name="contact_phone"
-            value={form.contact_phone}
-            onChange={(e) => patch("contact_phone", e.target.value)}
+            label="Phone"
+            name="phone"
+            value={form.phone}
+            onChange={(e) => patch("phone", e.target.value)}
           />
         </div>
+      </FormSection>
+
+      <FormSection
+        title="Business profile"
+        description="Where the business sits — sector, size, and who they transact with."
+      >
+        <div className="grid gap-4 md:grid-cols-2">
+          <Select
+            label="Sector"
+            value={form.sector}
+            onChange={(e) =>
+              patch("sector", e.target.value as FormState["sector"])
+            }
+          >
+            <option value="">— Not answered —</option>
+            {ZITF_SECTORS.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </Select>
+
+          <Select
+            label="Team size"
+            value={form.team_size_band}
+            onChange={(e) =>
+              patch(
+                "team_size_band",
+                e.target.value as FormState["team_size_band"],
+              )
+            }
+          >
+            <option value="">— Not answered —</option>
+            {ZITF_TEAM_SIZE_BANDS.map((b) => (
+              <option key={b} value={b}>
+                {b}
+              </option>
+            ))}
+          </Select>
+        </div>
+
+        <CheckboxGrid
+          legend="Supplier locations (tick all that apply)"
+          options={ZITF_SUPPLIER_LOCATIONS}
+          selected={form.supplier_locations}
+          onToggle={(opt) => toggleMulti("supplier_locations", opt)}
+        />
+
+        <CheckboxGrid
+          legend="Customer types (tick all that apply)"
+          options={ZITF_CUSTOMER_TYPES}
+          selected={form.customer_types}
+          onToggle={(opt) => toggleMulti("customer_types", opt)}
+        />
+
+        <CheckboxGrid
+          legend="How they pay suppliers (tick all that apply)"
+          options={ZITF_PAYMENT_METHODS}
+          selected={form.pay_suppliers_methods}
+          onToggle={(opt) => toggleMulti("pay_suppliers_methods", opt)}
+        />
+
+        <CheckboxGrid
+          legend="How they receive from customers (tick all that apply)"
+          options={ZITF_PAYMENT_METHODS}
+          selected={form.receive_customers_methods}
+          onToggle={(opt) => toggleMulti("receive_customers_methods", opt)}
+        />
+
+        <CheckboxGrid
+          legend="Top headaches (tick all that apply)"
+          options={ZITF_PAIN_HEADACHES}
+          selected={form.pain_top_headaches}
+          onToggle={(opt) => toggleMulti("pain_top_headaches", opt)}
+        />
       </FormSection>
 
       <FormSection
@@ -230,21 +330,6 @@ export default function PaperResponseForm({
           </Select>
 
           <Select
-            label="Buys from cross-border suppliers"
-            value={form.crossborder_supplier_exposure}
-            onChange={(e) =>
-              patch(
-                "crossborder_supplier_exposure",
-                e.target.value as FormState["crossborder_supplier_exposure"],
-              )
-            }
-          >
-            <option value="">— Not answered —</option>
-            <option value="yes">Yes</option>
-            <option value="no">No</option>
-          </Select>
-
-          <Select
             label="Impact if cross-border payment delays 7-10 days"
             value={form.crossborder_delay_impact}
             onChange={(e) =>
@@ -253,7 +338,6 @@ export default function PaperResponseForm({
                 e.target.value as FormState["crossborder_delay_impact"],
               )
             }
-            containerClassName="md:col-span-2"
           >
             <option value="">— Not answered —</option>
             {(Object.keys(ZITF_DELAY_IMPACT_LABEL) as ZitfDelayImpact[]).map(
@@ -286,7 +370,9 @@ export default function PaperResponseForm({
                   <input
                     type="checkbox"
                     checked={checked}
-                    onChange={() => toggleRiskMitigation(opt)}
+                    onChange={() =>
+                      toggleMulti("paid_first_time_risk_mitigation", opt)
+                    }
                     className="h-4 w-4 border border-zinc-300 accent-zimx-green"
                   />
                   {opt}
@@ -299,13 +385,13 @@ export default function PaperResponseForm({
         <div className="mt-4 grid gap-2 md:grid-cols-2">
           <Checkbox
             label="Cross-border delay pain flagged"
-            checked={form.crossborder_delay_pain}
-            onChange={(v) => patch("crossborder_delay_pain", v)}
+            checked={form.pain_crossborder_delay}
+            onChange={(v) => patch("pain_crossborder_delay", v)}
           />
           <Checkbox
-            label="Fraud pain flagged"
-            checked={form.fraud_pain}
-            onChange={(v) => patch("fraud_pain", v)}
+            label="Fraud loss pain flagged"
+            checked={form.pain_fraud_loss}
+            onChange={(v) => patch("pain_fraud_loss", v)}
           />
         </div>
       </FormSection>
@@ -392,5 +478,49 @@ function Checkbox({
       />
       {label}
     </label>
+  );
+}
+
+function CheckboxGrid({
+  legend,
+  options,
+  selected,
+  onToggle,
+}: {
+  legend: string;
+  options: ReadonlyArray<string>;
+  selected: string[];
+  onToggle: (option: string) => void;
+}) {
+  return (
+    <fieldset className="mt-4 space-y-2">
+      <legend className="font-mono text-[11px] uppercase tracking-tag text-zinc-500">
+        {legend}
+      </legend>
+      <div className="grid gap-1.5 md:grid-cols-2">
+        {options.map((opt) => {
+          const checked = selected.includes(opt);
+          return (
+            <label
+              key={opt}
+              className={cn(
+                "flex cursor-pointer items-center gap-2 border px-3 py-2 text-[13px]",
+                checked
+                  ? "border-zimx-black bg-zimx-offwhite"
+                  : "border-zinc-200 bg-white hover:border-zinc-300",
+              )}
+            >
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={() => onToggle(opt)}
+                className="h-4 w-4 border border-zinc-300 accent-zimx-green"
+              />
+              {opt}
+            </label>
+          );
+        })}
+      </div>
+    </fieldset>
   );
 }

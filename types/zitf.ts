@@ -17,15 +17,17 @@ export type ZitfStatus =
   | "qualified"
   | "contacted"
   | "pilot_candidate"
-  | "rejected";
+  | "rejected"
+  | "duplicate";
 
 /**
  * Spend bands used by the qualification scoring. Kept as an ordered tuple so
- * list-view sorters can compare via index.
+ * list-view sorters can compare via index. Values match the DB check
+ * constraint exactly — do not change without a migration.
  */
 export const ZITF_SPEND_BANDS = [
-  "under_5k",
-  "5k-10k",
+  "<2k",
+  "2k-10k",
   "10k-25k",
   "25k-50k",
   "50k+",
@@ -34,10 +36,105 @@ export type ZitfSpendBand = (typeof ZITF_SPEND_BANDS)[number];
 
 /** Delay-impact severity for cross-border purchases. */
 export type ZitfDelayImpact =
-  | "none"
+  | "no_impact"
   | "minor"
   | "significant"
   | "deal_breaker";
+
+/**
+ * Supplier location allowlist. The "foreign" subset drives the cross-border
+ * exposure flag: any value in `ZITF_FOREIGN_SUPPLIER_LOCATIONS` counts as a
+ * cross-border supplier.
+ */
+export const ZITF_SUPPLIER_LOCATIONS = [
+  "Zimbabwe",
+  "South Africa",
+  "China",
+  "Dubai / UAE",
+  "UK / Europe",
+  "Other",
+] as const;
+export type ZitfSupplierLocation = (typeof ZITF_SUPPLIER_LOCATIONS)[number];
+
+export const ZITF_FOREIGN_SUPPLIER_LOCATIONS: ReadonlyArray<ZitfSupplierLocation> = [
+  "South Africa",
+  "China",
+  "Dubai / UAE",
+  "UK / Europe",
+  "Other",
+];
+
+/** True when the respondent lists any foreign supplier location. */
+export function hasCrossborderSupplierExposure(
+  locations: readonly string[] | null | undefined,
+): boolean {
+  if (!locations || locations.length === 0) return false;
+  return locations.some((loc) =>
+    (ZITF_FOREIGN_SUPPLIER_LOCATIONS as ReadonlyArray<string>).includes(loc),
+  );
+}
+
+/** Sector bucket the respondent identifies with. Mirrors the DB allowlist. */
+export const ZITF_SECTORS = [
+  "Wholesale",
+  "FMCG",
+  "Distribution",
+  "Manufacturing",
+  "Agriculture",
+  "Fuel",
+  "Hardware",
+  "Retail",
+  "Services",
+  "Other",
+] as const;
+export type ZitfSector = (typeof ZITF_SECTORS)[number];
+
+/** Team-size bucket. */
+export const ZITF_TEAM_SIZE_BANDS = [
+  "1-5",
+  "6-20",
+  "21-50",
+  "51-200",
+  "200+",
+] as const;
+export type ZitfTeamSizeBand = (typeof ZITF_TEAM_SIZE_BANDS)[number];
+
+/** Payment methods used to pay suppliers / receive from customers. */
+export const ZITF_PAYMENT_METHODS = [
+  "Bank transfer",
+  "Cash (USD)",
+  "Cash (ZWL)",
+  "Mobile money",
+  "Card",
+  "Crypto / stablecoin",
+  "Broker / middleman",
+  "Other",
+] as const;
+export type ZitfPaymentMethod = (typeof ZITF_PAYMENT_METHODS)[number];
+
+/** Top-headaches allowlist. */
+export const ZITF_PAIN_HEADACHES = [
+  "Cashflow",
+  "Access to FX",
+  "Cross-border delays",
+  "Supplier fraud",
+  "Banking fees",
+  "Compliance / KYC",
+  "Staff / skills",
+  "Other",
+] as const;
+export type ZitfPainHeadache = (typeof ZITF_PAIN_HEADACHES)[number];
+
+/** Customer-type allowlist. */
+export const ZITF_CUSTOMER_TYPES = [
+  "Individuals",
+  "SMEs",
+  "Corporates",
+  "Government",
+  "Export",
+  "Other",
+] as const;
+export type ZitfCustomerType = (typeof ZITF_CUSTOMER_TYPES)[number];
 
 // ─── row shape ───────────────────────────────────────────────────────────────
 
@@ -58,20 +155,28 @@ export type ZitfResponse = {
 
   // Respondent.
   business_name: string | null;
-  contact_name: string | null;
-  contact_email: string | null;
-  contact_phone: string | null;
+  decision_maker_name: string | null;
+  email: string | null;
+  phone: string | null;
 
   // Paper-only context.
   stand_number: string | null;
 
+  // Business profile.
+  sector: ZitfSector | null;
+  team_size_band: ZitfTeamSizeBand | null;
+  supplier_locations: string[] | null;
+  customer_types: string[] | null;
+  pay_suppliers_methods: string[] | null;
+  receive_customers_methods: string[] | null;
+  pain_top_headaches: string[] | null;
+
   // Scored inputs.
   monthly_supplier_spend_band: ZitfSpendBand | null;
-  crossborder_supplier_exposure: boolean | null;
   crossborder_delay_impact: ZitfDelayImpact | null;
   paid_first_time_risk_mitigation: string[] | null;
-  crossborder_delay_pain: boolean | null;
-  fraud_pain: boolean | null;
+  pain_crossborder_delay: boolean | null;
+  pain_fraud_loss: boolean | null;
   consent_followup_contact: boolean;
 
   // Workflow.
@@ -106,16 +211,22 @@ export type ZitfOpsSummary = {
  */
 export type ZitfPaperFormInput = {
   business_name: string;
-  contact_name: string;
-  contact_email: string | null;
-  contact_phone: string | null;
+  decision_maker_name: string;
+  email: string | null;
+  phone: string | null;
   stand_number: string;
+  sector: ZitfSector | null;
+  team_size_band: ZitfTeamSizeBand | null;
+  supplier_locations: string[];
+  customer_types: string[];
+  pay_suppliers_methods: string[];
+  receive_customers_methods: string[];
+  pain_top_headaches: string[];
   monthly_supplier_spend_band: ZitfSpendBand | null;
-  crossborder_supplier_exposure: boolean;
   crossborder_delay_impact: ZitfDelayImpact | null;
   paid_first_time_risk_mitigation: string[];
-  crossborder_delay_pain: boolean;
-  fraud_pain: boolean;
+  pain_crossborder_delay: boolean;
+  pain_fraud_loss: boolean;
   consent_followup_contact: boolean;
   notes: string | null;
 };
@@ -158,6 +269,7 @@ export const ZITF_STATUS_LABEL: Record<ZitfStatus, string> = {
   contacted: "Contacted",
   pilot_candidate: "Pilot candidate",
   rejected: "Rejected",
+  duplicate: "Duplicate",
 };
 
 export const ZITF_CHANNEL_LABEL: Record<ZitfChannel, string> = {
@@ -167,15 +279,15 @@ export const ZITF_CHANNEL_LABEL: Record<ZitfChannel, string> = {
 };
 
 export const ZITF_SPEND_BAND_LABEL: Record<ZitfSpendBand, string> = {
-  under_5k: "Under $5k",
-  "5k-10k": "$5k – $10k",
+  "<2k": "Under $2k",
+  "2k-10k": "$2k – $10k",
   "10k-25k": "$10k – $25k",
   "25k-50k": "$25k – $50k",
   "50k+": "$50k+",
 };
 
 export const ZITF_DELAY_IMPACT_LABEL: Record<ZitfDelayImpact, string> = {
-  none: "No impact",
+  no_impact: "No impact",
   minor: "Minor",
   significant: "Significant",
   deal_breaker: "Deal breaker",

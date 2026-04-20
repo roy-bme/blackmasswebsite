@@ -48,6 +48,7 @@ const STATUS_TONE: Record<ZitfStatus, PillTone> = {
   contacted: "ink",
   pilot_candidate: "warning",
   rejected: "danger",
+  duplicate: "neutral",
 };
 
 const CHANNEL_TONE: Record<ZitfChannel, PillTone> = {
@@ -239,7 +240,7 @@ export default function ZitfResponseList({
                       {row.business_name ?? "—"}
                     </p>
                     <p className="text-[11px] text-zinc-500">
-                      {row.contact_name ?? "No contact name"}
+                      {row.decision_maker_name ?? "No contact name"}
                     </p>
                   </td>
                   <td className="px-3 py-3 text-right font-mono text-[13px] text-zimx-black">

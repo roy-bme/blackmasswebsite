@@ -1,3 +1,5 @@
+import "leaflet/dist/leaflet.css";
+
 import MapView from "@/components/ops/Map/MapView";
 import type {
   MapBusiness,

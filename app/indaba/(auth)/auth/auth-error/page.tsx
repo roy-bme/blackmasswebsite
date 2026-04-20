@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import Container from "@/components/Container";
+import Logo from "@/components/ops/Logo";
 
 type AuthErrorPageProps = {
   searchParams: { reason?: string };
@@ -10,6 +11,7 @@ export default function AuthErrorPage({ searchParams }: AuthErrorPageProps) {
   return (
     <section className="pt-32 md:pt-40 pb-24">
       <Container>
+        <Logo size="lg" variant="light" className="mb-10" />
         <p className="font-mono text-[12px] uppercase tracking-[1px] text-white/50">
           INDABA / SIGN IN
         </p>

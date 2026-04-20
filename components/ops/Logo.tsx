@@ -10,37 +10,36 @@ type Props = {
   /** Hide the wordmark and render only the glyph. */
   glyphOnly?: boolean;
   className?: string;
-  /** Optional accessible label override; defaults to "Indaba — Blackmass". */
+  /** Optional accessible label override; defaults to "ZimX — Indaba". */
   label?: string;
 };
 
 const SIZES: Record<Size, { wrapper: string; glyph: number; word: string }> = {
-  sm: { wrapper: "gap-2", glyph: 20, word: "text-[14px]" },
-  md: { wrapper: "gap-2.5", glyph: 28, word: "text-[18px]" },
-  lg: { wrapper: "gap-3", glyph: 40, word: "text-[24px]" },
+  sm: { wrapper: "gap-2", glyph: 22, word: "text-[14px]" },
+  md: { wrapper: "gap-2.5", glyph: 30, word: "text-[18px]" },
+  lg: { wrapper: "gap-3", glyph: 42, word: "text-[24px]" },
 };
 
 /**
- * Placeholder Indaba mark used across the ops portal.
+ * ZimX mark used across the ops portal.
  *
- * The glyph is a rotated square ("indaba" = a gathering, drawn as a meeting
- * point of four corners) with the sector accent rail beneath it. Replace
- * with the final ZimX-supplied SVG when artwork lands; the public API of
- * this component (variant, size, glyphOnly) is the contract Phase 5+ relies
- * on, so keep it stable.
+ * Geometric Z: white top/bottom bars with a gold (zimx-gold) diagonal and
+ * three short gold stripes on the top bar's trailing edge. `variant="dark"`
+ * swaps the white fills to charcoal for use on light surfaces; the gold
+ * accent stays constant.
  */
 export default function Logo({
   variant = "light",
   size = "md",
   glyphOnly = false,
   className,
-  label = "Indaba — Blackmass",
+  label = "ZimX — Indaba",
 }: Props) {
   const dims = SIZES[size];
   const isLight = variant === "light";
-  const markFill = isLight ? "#ffffff" : "#1B1B1B";
-  const markStroke = isLight ? "#ffffff" : "#1B1B1B";
+  const barFill = isLight ? "#ffffff" : "#1B1B1B";
   const wordColor = isLight ? "text-white" : "text-zimx-black";
+  const accent = "#D4AF37";
 
   return (
     <span
@@ -61,38 +60,23 @@ export default function Logo({
         aria-hidden="true"
         className="shrink-0"
       >
-        {/* Outer rotated square — the "gathering". */}
-        <rect
-          x="6"
-          y="6"
-          width="28"
-          height="28"
-          transform="rotate(45 20 20)"
-          stroke={markStroke}
-          strokeWidth="2"
-          fill="none"
-        />
-        {/* Inner dot — the meeting point. */}
-        <circle cx="20" cy="20" r="4" fill={markFill} />
-        {/* Sector accent rail across the bottom — first five Bulawayo sector colours. */}
-        <g>
-          <rect x="4" y="36" width="6" height="2" fill="#378ADD" />
-          <rect x="11" y="36" width="6" height="2" fill="#1D9E75" />
-          <rect x="18" y="36" width="6" height="2" fill="#BA7517" />
-          <rect x="25" y="36" width="6" height="2" fill="#E24B4A" />
-          <rect x="32" y="36" width="4" height="2" fill="#7F77DD" />
-        </g>
+        <polygon points="5,4 35,4 35,10 5,10" fill={barFill} />
+        <polygon points="30,10 35,10 10,30 5,30" fill={accent} />
+        <polygon points="5,30 35,30 35,36 5,36" fill={barFill} />
+        <rect x="23" y="5" width="9" height="0.8" fill={accent} />
+        <rect x="23" y="6.6" width="9" height="0.8" fill={accent} />
+        <rect x="23" y="8.2" width="9" height="0.8" fill={accent} />
       </svg>
 
       {!glyphOnly && (
         <span
           className={cn(
-            "font-mono font-light tracking-[2px] uppercase leading-none",
+            "font-sans font-semibold tracking-tight leading-none",
             dims.word,
             wordColor,
           )}
         >
-          indaba
+          ZimX
         </span>
       )}
     </span>

@@ -42,13 +42,20 @@ export default function OverviewTab({
     setSavingField(column);
     setError(null);
     const supabase = createSupabaseBrowserClient();
-    const { error: updateError } = await supabase
+    const { data, error: updateError } = await supabase
       .from("businesses")
       .update({ [column]: value })
-      .eq("id", business.id);
+      .eq("id", business.id)
+      .select("id");
     setSavingField(null);
     if (updateError) {
       setError(updateError.message);
+      return;
+    }
+    // RLS-blocked updates return no error but also no affected rows, so flag
+    // that explicitly rather than letting the UI pretend a save succeeded.
+    if (!data || data.length === 0) {
+      setError("Update was not saved. Check your permissions.");
       return;
     }
     onMutated();
@@ -484,15 +491,20 @@ function PhotosSection({
     const { data: pub } = supabase.storage.from("photos").getPublicUrl(path);
     const nextPhotos = [...photos, pub.publicUrl];
 
-    const { error: updateError } = await supabase
+    const { data, error: updateError } = await supabase
       .from("businesses")
       .update({ photos: nextPhotos })
-      .eq("id", businessId);
+      .eq("id", businessId)
+      .select("id");
 
     setUploading(false);
 
     if (updateError) {
       setError(updateError.message);
+      return;
+    }
+    if (!data || data.length === 0) {
+      setError("Photo record was not saved. Check your permissions.");
       return;
     }
 

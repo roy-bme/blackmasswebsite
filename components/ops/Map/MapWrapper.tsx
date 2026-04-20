@@ -27,6 +27,8 @@ type MapWrapperProps = {
   introductions: MapIntroduction[];
   filter: MapFilter;
   showIntros: boolean;
+  pinDropMode?: boolean;
+  onMapClick?: (coords: { lat: number; lng: number }) => void;
 };
 
 export default function MapWrapper(props: MapWrapperProps) {

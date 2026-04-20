@@ -4,6 +4,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useEffect, useMemo, useRef } from "react";
 
+import { cn } from "@/lib/ops/cn";
 import { getSectorHex } from "@/lib/ops/sector-colors";
 
 import type { MapFilter } from "./MapFilters";
@@ -21,6 +22,8 @@ type BulawayoMapProps = {
   introductions: MapIntroduction[];
   filter: MapFilter;
   showIntros: boolean;
+  pinDropMode?: boolean;
+  onMapClick?: (coords: { lat: number; lng: number }) => void;
 };
 
 type ZonePolygon = {
@@ -103,15 +106,24 @@ export default function BulawayoMap({
   introductions,
   filter,
   showIntros,
+  pinDropMode = false,
+  onMapClick,
 }: BulawayoMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
+  const onMapClickRef = useRef(onMapClick);
   const layersRef = useRef<{
     zones: L.LayerGroup;
     links: L.LayerGroup;
     businesses: L.LayerGroup;
     introductions: L.LayerGroup;
   } | null>(null);
+
+  // Keep the ref in sync so the click handler always sees the latest callback
+  // without being re-registered on every render.
+  useEffect(() => {
+    onMapClickRef.current = onMapClick;
+  }, [onMapClick]);
 
   const zoneNameById = useMemo(
     () => new Map(zones.map((z) => [z.id, z.name])),
@@ -295,10 +307,30 @@ export default function BulawayoMap({
     }
   }, [businesses, links, introductions, filter, showIntros, zoneNameById]);
 
+  // Pin-drop mode: toggle crosshair cursor + install a one-shot click handler.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (pinDropMode) {
+      const handler = (event: L.LeafletMouseEvent) => {
+        onMapClickRef.current?.({ lat: event.latlng.lat, lng: event.latlng.lng });
+      };
+      map.on("click", handler);
+      return () => {
+        map.off("click", handler);
+      };
+    }
+    return undefined;
+  }, [pinDropMode]);
+
   return (
     <div
       ref={containerRef}
-      className="h-[60vh] w-full md:h-[70vh]"
+      className={cn(
+        "h-[60vh] w-full md:h-[70vh]",
+        pinDropMode && "indaba-pin-drop-cursor",
+      )}
       role="application"
       aria-label="Bulawayo business map"
     />

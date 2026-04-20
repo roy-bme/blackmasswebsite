@@ -3,51 +3,46 @@
 import Input from "@/components/ops/ui/Input";
 import Select from "@/components/ops/ui/Select";
 import { cn } from "@/lib/ops/cn";
-import { SECTOR_LIST } from "@/lib/ops/sector-colors";
+import { SECTOR_LIST, type SectorKey } from "@/lib/ops/sector-colors";
 
 import type { DirectoryZone } from "./types";
 
-export type ChipFilter =
-  | "all"
-  | "launch6"
-  | "formal"
-  | "informal"
-  | "incomplete";
+export type DirectoryFilterState = {
+  /** Empty string means "all sectors". */
+  sector: SectorKey | "";
+  /** Empty string means "all zones". */
+  zoneId: string;
+  launch6: boolean;
+  search: string;
+};
 
-const CHIPS: Array<{ value: ChipFilter; label: string }> = [
-  { value: "all", label: "All" },
-  { value: "launch6", label: "Launch 6" },
-  { value: "formal", label: "Formal" },
-  { value: "informal", label: "Informal" },
-  { value: "incomplete", label: "Incomplete" },
-];
+export const EMPTY_FILTERS: DirectoryFilterState = {
+  sector: "",
+  zoneId: "",
+  launch6: false,
+  search: "",
+};
+
+const SECTOR_CHIPS: Array<{ value: DirectoryFilterState["sector"]; label: string }> =
+  [
+    { value: "", label: "All" },
+    ...SECTOR_LIST.filter((s) => s.key !== "contact").map((s) => ({
+      value: s.key,
+      label: s.label,
+    })),
+  ];
 
 type DirectoryFiltersProps = {
-  chip: ChipFilter;
-  sector: string;
-  zoneId: string;
-  search: string;
+  filters: DirectoryFilterState;
   zones: DirectoryZone[];
-  onChip: (chip: ChipFilter) => void;
-  onSector: (sector: string) => void;
-  onZone: (zoneId: string) => void;
-  onSearch: (search: string) => void;
+  onChange: (patch: Partial<DirectoryFilterState>) => void;
 };
 
 export default function DirectoryFilters({
-  chip,
-  sector,
-  zoneId,
-  search,
+  filters,
   zones,
-  onChip,
-  onSector,
-  onZone,
-  onSearch,
+  onChange,
 }: DirectoryFiltersProps) {
-  const sectorOptions = SECTOR_LIST.filter((s) => s.key !== "contact").map(
-    (s) => ({ label: s.label, value: s.key }),
-  );
   const zoneOptions = zones.map((z) => ({ label: z.name, value: z.id }));
 
   return (
@@ -57,13 +52,13 @@ export default function DirectoryFilters({
         style={{ WebkitOverflowScrolling: "touch" }}
       >
         <div className="flex min-w-max gap-2 md:flex-wrap">
-          {CHIPS.map((c) => {
-            const isActive = chip === c.value;
+          {SECTOR_CHIPS.map((chip) => {
+            const isActive = filters.sector === chip.value;
             return (
               <button
-                key={c.value}
+                key={chip.value || "all"}
                 type="button"
-                onClick={() => onChip(c.value)}
+                onClick={() => onChange({ sector: chip.value })}
                 aria-pressed={isActive}
                 className={cn(
                   "whitespace-nowrap border px-3 py-1.5 font-mono text-[11px] uppercase tracking-tag transition-colors",
@@ -72,33 +67,39 @@ export default function DirectoryFilters({
                     : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-400 hover:text-zimx-black",
                 )}
               >
-                {c.label}
+                {chip.label}
               </button>
             );
           })}
+          <button
+            type="button"
+            onClick={() => onChange({ launch6: !filters.launch6 })}
+            aria-pressed={filters.launch6}
+            className={cn(
+              "whitespace-nowrap border px-3 py-1.5 font-mono text-[11px] uppercase tracking-tag transition-colors",
+              filters.launch6
+                ? "border-zimx-gold bg-zimx-gold text-zimx-black"
+                : "border-zinc-200 bg-white text-zinc-600 hover:border-zinc-400 hover:text-zimx-black",
+            )}
+          >
+            {"\u2605 Launch 6"}
+          </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-        <Select
-          name="sector"
-          value={sector}
-          onChange={(e) => onSector(e.target.value)}
-          options={[{ label: "All sectors", value: "" }, ...sectorOptions]}
-          aria-label="Sector"
-        />
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         <Select
           name="zone"
-          value={zoneId}
-          onChange={(e) => onZone(e.target.value)}
+          value={filters.zoneId}
+          onChange={(e) => onChange({ zoneId: e.target.value })}
           options={[{ label: "All zones", value: "" }, ...zoneOptions]}
           aria-label="Zone"
         />
         <Input
           name="search"
           type="search"
-          value={search}
-          onChange={(e) => onSearch(e.target.value)}
+          value={filters.search}
+          onChange={(e) => onChange({ search: e.target.value })}
           placeholder="Search businesses"
           aria-label="Search businesses"
         />

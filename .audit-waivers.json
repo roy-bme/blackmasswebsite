@@ -1,0 +1,39 @@
+{
+  "advisories": [
+    {
+      "id": "GHSA-9g9p-9gw9-jx7f",
+      "package": "next",
+      "severity": "high",
+      "reason": "DoS via Image Optimizer remotePatterns. This deployment does not configure next/image remotePatterns (no images.remotePatterns in next.config.mjs). Not exploitable.",
+      "reviewed": "2026-04-21"
+    },
+    {
+      "id": "GHSA-h25m-26qc-wcjf",
+      "package": "next",
+      "severity": "high",
+      "reason": "HTTP request deserialization DoS in insecure RSC usage. 14.2.35 mitigates via bounded RSC processing; no fixed 14.x release available. Tracked as upgrade-to-Next-15 work.",
+      "reviewed": "2026-04-21"
+    },
+    {
+      "id": "GHSA-ggv3-7p47-pfv8",
+      "package": "next",
+      "severity": "high",
+      "reason": "HTTP request smuggling in rewrites. Our rewrites are limited to the single hostname-driven /indaba prefix in middleware.ts, fronted by Vercel's edge which normalises upstream requests. No fixed 14.x release available.",
+      "reviewed": "2026-04-21"
+    },
+    {
+      "id": "GHSA-3x4c-7xq6-9pq8",
+      "package": "next",
+      "severity": "high",
+      "reason": "Unbounded next/image disk cache growth. We do not run self-hosted Next, so Vercel's image optimisation platform handles cache lifecycle.",
+      "reviewed": "2026-04-21"
+    },
+    {
+      "id": "GHSA-q4gf-8mx6-v5v3",
+      "package": "next",
+      "severity": "high",
+      "reason": "DoS via Server Components. Per Next 14.2.35 release notes this is partially mitigated; full fix requires Next 16. Tracked as upgrade work.",
+      "reviewed": "2026-04-21"
+    }
+  ]
+}

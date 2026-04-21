@@ -10,7 +10,7 @@ import Select from "@/components/ops/ui/Select";
 import Textarea from "@/components/ops/ui/Textarea";
 import { SECTOR_LIST } from "@/lib/ops/sector-colors";
 import { formatCoords, reverseGeocode } from "@/lib/ops/reverse-geocode";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { opsApiPost } from "@/lib/ops/api-client";
 import { getZoneBounds, pointInBounds } from "@/lib/ops/zone-bounds";
 
 import type { MapZone } from "./types";
@@ -139,30 +139,30 @@ export default function AddBusinessDialog({
     }
 
     setSubmitting(true);
-    const supabase = createSupabaseBrowserClient();
     const volume = form.est_monthly_volume
       ? Number(form.est_monthly_volume)
       : null;
 
-    const { error: insertError } = await supabase.from("businesses").insert({
-      name: form.name.trim(),
-      sector: form.sector,
-      type: "formal",
-      zone_id: form.zone_id || null,
-      lat: coords.lat,
-      lng: coords.lng,
-      address: address ?? null,
-      est_monthly_volume: volume,
-      notes: form.notes.trim() || null,
-      mapped_by: currentUserId,
-      launch_6: false,
-      onboarding_stage: "identified",
-    });
+    const res = await opsApiPost<{ id: string }>(
+      "/api/ops/businesses/create",
+      {
+        name: form.name.trim(),
+        sector: form.sector,
+        type: "formal",
+        zone_id: form.zone_id || null,
+        lat: coords.lat,
+        lng: coords.lng,
+        address: address ?? null,
+        est_monthly_volume: volume,
+        notes: form.notes.trim() || null,
+        launch_6: false,
+      },
+    );
 
     setSubmitting(false);
 
-    if (insertError) {
-      setError(insertError.message);
+    if (!res.ok) {
+      setError("Could not save business.");
       return;
     }
 

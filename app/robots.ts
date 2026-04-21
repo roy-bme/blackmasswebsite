@@ -1,21 +1,17 @@
 import type { MetadataRoute } from "next";
 import { headers } from "next/headers";
 
-// Served from both hostnames, so we vary the response by Host header:
-//   - blackmass.co.uk  →  allow everything, point to the marketing sitemap
-//   - indaba.zimx.io   →  disallow everything (also enforced via
-//                          X-Robots-Tag in middleware.ts as belt-and-braces)
-//
-// Marking as force-dynamic so Next.js doesn't try to prerender a single
-// static response at build time.
+import { isIndabaHost } from "@/lib/ops/host-allowlist";
+
+// Served from both hostnames. We vary the response by Host header:
+//   - indaba.zimx.io (or any allowed indaba host) → disallow everything
+//   - otherwise (marketing or unknown)            → allow everything
 export const dynamic = "force-dynamic";
 
 export default function robots(): MetadataRoute.Robots {
-  const host = headers().get("host") ?? "";
-  const hostname = host.split(":")[0].toLowerCase();
-  const isIndaba = hostname === "indaba" || hostname.startsWith("indaba.");
+  const host = headers().get("host");
 
-  if (isIndaba) {
+  if (isIndabaHost(host)) {
     return {
       rules: [{ userAgent: "*", disallow: "/" }],
     };

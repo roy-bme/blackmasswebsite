@@ -8,9 +8,10 @@ import { useEffect, useRef, useState } from "react";
 import Avatar from "@/components/ops/ui/Avatar";
 import Button from "@/components/ops/ui/Button";
 import { cn } from "@/lib/ops/cn";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { opsApiPost, opsApiUpload } from "@/lib/ops/api-client";
 import type { ActivityChannel } from "@/types/ops";
 
+import SignedAttachment from "./SignedAttachment";
 import { CHANNEL_LABEL, defaultChannelForRole, type FeedUser } from "./types";
 
 type ComposeBoxProps = {
@@ -24,6 +25,12 @@ type ComposeBoxProps = {
   autoFocus?: boolean;
   compact?: boolean;
 };
+
+const ALLOWED_MIME = new Set<string>([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
 
 export default function ComposeBox({
   currentUser,
@@ -56,7 +63,6 @@ export default function ComposeBox({
     }
   }, [autoFocus]);
 
-  // Auto-expand textarea as content grows.
   useEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
@@ -64,35 +70,40 @@ export default function ComposeBox({
     el.style.height = `${el.scrollHeight}px`;
   }, [content]);
 
-  async function handlePickPhoto(
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) {
+  async function handlePickPhoto(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
 
-    setUploading(true);
-    setError(null);
-    const supabase = createSupabaseBrowserClient();
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const path = `feed/${currentUser.id}/${Date.now()}-${safeName}`;
-    const { error: uploadError } = await supabase.storage
-      .from("photos")
-      .upload(path, file, { upsert: false });
-
-    if (uploadError) {
-      setUploading(false);
-      setError(uploadError.message);
+    if (!ALLOWED_MIME.has(file.type)) {
+      setError("Only JPEG, PNG, or WebP images are allowed.");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setError("Image must be under 10 MB.");
       return;
     }
 
-    const { data: pub } = supabase.storage.from("photos").getPublicUrl(path);
-    setAttachments((prev) => [...prev, pub.publicUrl]);
+    setUploading(true);
+    setError(null);
+    const form = new FormData();
+    form.set("file", file);
+    form.set("bucket", "photos");
+
+    const res = await opsApiUpload<{ path: string }>(
+      "/api/ops/activities/upload",
+      form,
+    );
     setUploading(false);
+    if (!res.ok) {
+      setError("Upload failed. Try again.");
+      return;
+    }
+    setAttachments((prev) => [...prev, res.data.path]);
   }
 
-  function removeAttachment(url: string) {
-    setAttachments((prev) => prev.filter((a) => a !== url));
+  function removeAttachment(path: string) {
+    setAttachments((prev) => prev.filter((a) => a !== path));
   }
 
   async function handleSubmit() {
@@ -102,22 +113,20 @@ export default function ComposeBox({
     setSubmitting(true);
     setError(null);
 
-    const supabase = createSupabaseBrowserClient();
     const effectiveChannel = lockedChannel ?? channel;
 
-    const { error: insertError } = await supabase.from("activities").insert({
-      user_id: currentUser.id,
+    const res = await opsApiPost<{ id: string }>("/api/ops/activities/create", {
       channel: effectiveChannel,
       type: attachments.length > 0 && !trimmed ? "photo" : "daily_report",
       content: trimmed,
-      attachments: attachments.length > 0 ? attachments : null,
+      attachments,
       parent_id: parentId ?? null,
     });
 
     setSubmitting(false);
 
-    if (insertError) {
-      setError(insertError.message);
+    if (!res.ok) {
+      setError("Could not post. Try again.");
       return;
     }
 
@@ -149,7 +158,7 @@ export default function ComposeBox({
             onChange={(e) => setContent(e.target.value)}
             placeholder={
               placeholder ??
-              (isReply ? "Write a reply\u2026" : "Post an update\u2026")
+              (isReply ? "Write a reply…" : "Post an update…")
             }
             rows={compact ? 2 : 3}
             className={cn(
@@ -161,19 +170,19 @@ export default function ComposeBox({
 
           {attachments.length > 0 ? (
             <ul className="flex flex-wrap gap-2">
-              {attachments.map((url) => (
+              {attachments.map((path) => (
                 <li
-                  key={url}
+                  key={path}
                   className="relative h-20 w-20 overflow-hidden border border-zinc-200 bg-zimx-offwhite"
                 >
-                  <img
-                    src={url}
+                  <SignedAttachment
+                    path={path}
                     alt="Attachment preview"
                     className="h-full w-full object-cover"
                   />
                   <button
                     type="button"
-                    onClick={() => removeAttachment(url)}
+                    onClick={() => removeAttachment(path)}
                     aria-label="Remove attachment"
                     className="absolute right-0 top-0 inline-flex h-5 w-5 items-center justify-center bg-zimx-black/80 font-mono text-[12px] leading-none text-white hover:bg-zimx-red"
                   >
@@ -225,7 +234,7 @@ export default function ComposeBox({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp"
                 className="hidden"
                 onChange={handlePickPhoto}
                 disabled={uploading || submitting}
@@ -253,9 +262,9 @@ export default function ComposeBox({
               }
             >
               {submitting
-                ? "Posting\u2026"
+                ? "Posting…"
                 : uploading
-                  ? "Uploading\u2026"
+                  ? "Uploading…"
                   : isReply
                     ? "Reply"
                     : "Post"}

@@ -1,5 +1,6 @@
 import Container from "@/components/Container";
 import Logo from "@/components/ops/Logo";
+import { safeNext, DEFAULT_NEXT } from "@/lib/ops/next-param";
 
 import LoginForm from "./LoginForm";
 
@@ -7,16 +8,9 @@ type LoginPageProps = {
   searchParams: { next?: string };
 };
 
-// Only accept relative, single-segment-safe `next` values so a malicious link
-// can't redirect post-auth to an external host.
-function sanitiseNext(next: string | undefined): string | undefined {
-  if (!next) return undefined;
-  if (!next.startsWith("/") || next.startsWith("//")) return undefined;
-  return next;
-}
-
 export default function LoginPage({ searchParams }: LoginPageProps) {
-  const next = sanitiseNext(searchParams.next);
+  const resolved = safeNext(searchParams.next ?? null);
+  const next = resolved === DEFAULT_NEXT ? undefined : resolved;
 
   return (
     <section className="pt-32 md:pt-40 pb-24">

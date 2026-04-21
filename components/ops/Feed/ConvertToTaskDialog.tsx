@@ -8,7 +8,7 @@ import Dialog from "@/components/ops/ui/Dialog";
 import Input from "@/components/ops/ui/Input";
 import Select from "@/components/ops/ui/Select";
 import Textarea from "@/components/ops/ui/Textarea";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { opsApiPost } from "@/lib/ops/api-client";
 import type { Activity } from "@/types/ops";
 
 import type { FeedUser } from "./types";
@@ -64,20 +64,17 @@ export default function ConvertToTaskDialog({
     setSubmitting(true);
     setError(null);
 
-    const supabase = createSupabaseBrowserClient();
-    const { error: insertError } = await supabase.from("tasks").insert({
+    const res = await opsApiPost<{ id: string }>("/api/ops/tasks/create", {
       title: cleanedTitle,
       description: description.trim() || null,
       assigned_to: assignedTo || null,
-      created_by: currentUserId,
       due_date: dueDate || null,
-      status: "open",
     });
 
     setSubmitting(false);
 
-    if (insertError) {
-      setError(insertError.message);
+    if (!res.ok) {
+      setError("Could not create task.");
       return;
     }
 

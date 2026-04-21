@@ -7,7 +7,7 @@ import Button from "@/components/ops/ui/Button";
 import Dialog from "@/components/ops/ui/Dialog";
 import Input from "@/components/ops/ui/Input";
 import Select from "@/components/ops/ui/Select";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { opsApiPost } from "@/lib/ops/api-client";
 
 import type { MapBusiness } from "./types";
 
@@ -73,26 +73,22 @@ export default function AddLinkDialog({
     }
 
     setSubmitting(true);
-    const supabase = createSupabaseBrowserClient();
 
-    const { error: insertError } = await supabase
-      .from("supply_chain_links")
-      .insert({
-        supplier_id: form.supplier_id,
-        buyer_id: form.buyer_id,
-        product: form.product.trim(),
-        est_monthly_volume: form.est_monthly_volume
-          ? Number(form.est_monthly_volume)
-          : null,
-        payment_method: form.payment_method || null,
-        payment_frequency: form.payment_frequency || null,
-        mapped_by: currentUserId,
-      });
+    const res = await opsApiPost<{ id: string }>("/api/ops/links/create", {
+      supplier_id: form.supplier_id,
+      buyer_id: form.buyer_id,
+      product: form.product.trim(),
+      est_monthly_volume: form.est_monthly_volume
+        ? Number(form.est_monthly_volume)
+        : null,
+      payment_method: form.payment_method || null,
+      payment_frequency: form.payment_frequency || null,
+    });
 
     setSubmitting(false);
 
-    if (insertError) {
-      setError(insertError.message);
+    if (!res.ok) {
+      setError("Could not save link.");
       return;
     }
 

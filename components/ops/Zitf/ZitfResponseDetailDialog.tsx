@@ -8,13 +8,12 @@ import Dialog from "@/components/ops/ui/Dialog";
 import Pill, { type PillTone } from "@/components/ops/ui/Pill";
 import Select from "@/components/ops/ui/Select";
 import Textarea from "@/components/ops/ui/Textarea";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { opsApiPost } from "@/lib/ops/api-client";
 import {
   ZITF_CHANNEL_LABEL,
   ZITF_DELAY_IMPACT_LABEL,
   ZITF_SPEND_BAND_LABEL,
   ZITF_STATUS_LABEL,
-  ZITF_TABLES,
   hasCrossborderSupplierExposure,
   type ZitfResponse,
   type ZitfStatus,
@@ -65,14 +64,14 @@ export default function ZitfResponseDetailDialog({
     if (!row) return;
     setSaving(true);
     setError(null);
-    const supabase = createSupabaseBrowserClient();
-    const { error: saveError } = await supabase
-      .from(ZITF_TABLES.responses)
-      .update({ status, notes: notes.trim() ? notes.trim() : null })
-      .eq("id", row.id);
+    const res = await opsApiPost<{ id: string }>("/api/ops/zitf/update", {
+      id: row.id,
+      status,
+      notes: notes.trim() ? notes.trim() : null,
+    });
     setSaving(false);
-    if (saveError) {
-      setError(saveError.message);
+    if (!res.ok) {
+      setError("Could not save.");
       return;
     }
     router.refresh();

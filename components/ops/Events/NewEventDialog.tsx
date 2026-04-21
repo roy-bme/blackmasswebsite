@@ -8,7 +8,7 @@ import Dialog from "@/components/ops/ui/Dialog";
 import Input from "@/components/ops/ui/Input";
 import Select from "@/components/ops/ui/Select";
 import Textarea from "@/components/ops/ui/Textarea";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { opsApiPost } from "@/lib/ops/api-client";
 
 import { EVENT_TYPE_OPTIONS, type EventType } from "./types";
 
@@ -70,8 +70,7 @@ export default function NewEventDialog({ open, onClose }: NewEventDialogProps) {
     setSubmitting(true);
     setError(null);
 
-    const supabase = createSupabaseBrowserClient();
-    const { error: insertError } = await supabase.from("events").insert({
+    const res = await opsApiPost<{ id: string }>("/api/ops/events/create", {
       name: form.name.trim(),
       date: form.date,
       end_date: form.end_date || null,
@@ -79,13 +78,12 @@ export default function NewEventDialog({ open, onClose }: NewEventDialogProps) {
       type: form.type,
       priority: priorityNum,
       notes: form.notes.trim() || null,
-      status: "upcoming",
     });
 
     setSubmitting(false);
 
-    if (insertError) {
-      setError(insertError.message);
+    if (!res.ok) {
+      setError("Could not save event.");
       return;
     }
 

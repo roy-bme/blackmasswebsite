@@ -42,7 +42,7 @@ export const loadOpsProfile = cache(async (): Promise<OpsProfileResult> => {
 
   const { data, error } = await supabase
     .from("users")
-    .select("id, email, name, role, active")
+    .select("id, email, name, role, active, revoked_at")
     .eq("id", authUser.id)
     .maybeSingle();
 
@@ -60,9 +60,10 @@ export const loadOpsProfile = cache(async (): Promise<OpsProfileResult> => {
     name: string;
     role: UserRole;
     active: boolean;
+    revoked_at: string | null;
   };
 
-  if (!row.active) {
+  if (!row.active || row.revoked_at !== null) {
     return { status: "disabled" };
   }
 
@@ -93,10 +94,7 @@ export async function requireModuleAccess(href: string): Promise<OpsUser> {
   }
 
   if (!canAccess(result.user.role, href)) {
-    const flash = encodeURIComponent(
-      "You don't have access to that module.",
-    );
-    redirect(`/indaba/dashboard?flash=${flash}`);
+    redirect(`/indaba/dashboard?flash=no_access`);
   }
 
   return result.user;

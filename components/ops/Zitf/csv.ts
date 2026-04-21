@@ -7,6 +7,10 @@ import {
   type ZitfResponse,
 } from "@/types/zitf";
 
+import { escapeCell } from "./csv-escape";
+
+export { escapeCell };
+
 /**
  * Columns emitted by the list view CSV export. Order matters — the header
  * row and every data row follow this sequence exactly.
@@ -89,15 +93,6 @@ const COLUMNS: Array<{
   },
   { header: "Notes", accessor: (r) => r.notes ?? "" },
 ];
-
-function escapeCell(value: string | number | boolean | null): string {
-  if (value === null || value === undefined) return "";
-  const str = typeof value === "boolean" ? (value ? "yes" : "no") : String(value);
-  if (/[",\n\r]/.test(str)) {
-    return `"${str.replace(/"/g, '""')}"`;
-  }
-  return str;
-}
 
 /** Serialise a set of responses to an RFC 4180 CSV string. */
 export function responsesToCsv(rows: ZitfResponse[]): string {

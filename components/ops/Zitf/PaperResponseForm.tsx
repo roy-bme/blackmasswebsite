@@ -8,7 +8,7 @@ import Input from "@/components/ops/ui/Input";
 import Select from "@/components/ops/ui/Select";
 import Textarea from "@/components/ops/ui/Textarea";
 import { cn } from "@/lib/ops/cn";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { opsApiPost } from "@/lib/ops/api-client";
 import {
   ZITF_CUSTOMER_TYPES,
   ZITF_DELAY_IMPACT_LABEL,
@@ -18,7 +18,6 @@ import {
   ZITF_SPEND_BAND_LABEL,
   ZITF_SPEND_BANDS,
   ZITF_SUPPLIER_LOCATIONS,
-  ZITF_TABLES,
   ZITF_TEAM_SIZE_BANDS,
   computeIsPriorityFollowup,
   type ZitfDelayImpact,
@@ -147,39 +146,32 @@ export default function PaperResponseForm({
     setSubmitting(true);
     setSubmitError(null);
 
-    const supabase = createSupabaseBrowserClient();
-    const { data, error } = await supabase
-      .from(ZITF_TABLES.responses)
-      .insert({
-        ...payload,
-        channel: "paper",
-        collected_by: currentUserId,
-      })
-      .select("id, qualified_score, is_priority_followup")
-      .single();
+    const res = await opsApiPost<{
+      id: string;
+      qualified_score: number;
+      is_priority_followup: boolean;
+    }>("/api/ops/zitf/create-paper", payload);
 
     setSubmitting(false);
 
-    if (error) {
-      setSubmitError(error.message);
+    if (!res.ok) {
+      setSubmitError("Could not save response.");
       return;
     }
 
-    const priority =
-      data?.is_priority_followup ??
+    // Derived values are only used client-side for a flash, which is now a
+    // whitelisted key (see lib/ops/flash.ts). computeIsPriorityFollowup is
+    // kept here as defence-in-depth if the server ever returns the row.
+    const _priority =
+      res.data.is_priority_followup ??
       computeIsPriorityFollowup({
         consent_followup_contact: payload.consent_followup_contact,
         monthly_supplier_spend_band: payload.monthly_supplier_spend_band,
         paid_first_time_risk_mitigation: payload.paid_first_time_risk_mitigation,
         crossborder_delay_impact: payload.crossborder_delay_impact,
       });
-    const score = data?.qualified_score;
-    const flash = encodeURIComponent(
-      `Saved ${payload.business_name} · score ${
-        typeof score === "number" ? Math.round(score) : "?"
-      }${priority ? " · priority follow-up" : ""}`,
-    );
-    router.push(`/indaba/zitf?flash=${flash}`);
+    void _priority;
+    router.push(`/indaba/zitf?flash=paper_saved`);
     router.refresh();
   }
 

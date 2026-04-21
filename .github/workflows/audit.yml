@@ -1,0 +1,30 @@
+name: audit
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  audit-and-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20.11"
+      - name: Install dependencies (no scripts)
+        run: npm ci --ignore-scripts
+      - name: Raw npm audit (informational)
+        run: npm audit --omit=dev --audit-level=high || true
+      - name: Blocking audit check (waiver-aware)
+        run: node scripts/audit-check.mjs
+      - name: TypeScript
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint -- --max-warnings=0
+      - name: Unit tests
+        run: npm test

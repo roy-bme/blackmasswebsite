@@ -1,14 +1,14 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element */
-
 import { useEffect, useState } from "react";
 
 import Avatar from "@/components/ops/ui/Avatar";
 import Pill from "@/components/ops/ui/Pill";
 import { cn } from "@/lib/ops/cn";
+import { isAllowedAttachment } from "@/lib/ops/attachments";
 import type { Activity } from "@/types/ops";
 
+import SignedAttachment from "./SignedAttachment";
 import ThreadReplies from "./ThreadReplies";
 import {
   CHANNEL_LABEL,
@@ -36,14 +36,13 @@ export default function FeedItem({
   const [replying, setReplying] = useState(false);
   const [now, setNow] = useState<number | null>(null);
 
-  // Resolve timestamps on the client only to avoid SSR/CSR mismatches.
   useEffect(() => {
     setNow(Date.now());
   }, []);
 
   const channelLabel = CHANNEL_LABEL[activity.channel];
   const channelClass = CHANNEL_PILL_CLASS[activity.channel];
-  const attachments = activity.attachments ?? [];
+  const attachments = (activity.attachments ?? []).filter(isAllowedAttachment);
   const authorRoleRing = author ? ROLE_AVATAR_RING[author.role] : "";
 
   return (
@@ -81,23 +80,19 @@ export default function FeedItem({
                 attachments.length === 1 ? "grid-cols-1" : "grid-cols-2",
               )}
             >
-              {attachments.slice(0, 4).map((url) => (
+              {attachments.slice(0, 4).map((path) => (
                 <li
-                  key={url}
+                  key={path}
                   className="overflow-hidden border border-zinc-200 bg-zimx-offwhite"
                 >
-                  <a
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block aspect-[4/3]"
-                  >
-                    <img
-                      src={url}
+                  <div className="block aspect-[4/3]">
+                    <SignedAttachment
+                      path={path}
                       alt="Attachment"
                       className="h-full w-full object-cover"
+                      wrapInLink
                     />
-                  </a>
+                  </div>
                 </li>
               ))}
             </ul>

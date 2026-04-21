@@ -7,6 +7,7 @@ import Input from "@/components/ops/ui/Input";
 import Pill, { type PillTone } from "@/components/ops/ui/Pill";
 import Select from "@/components/ops/ui/Select";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { opsApiPost } from "@/lib/ops/api-client";
 import type { Contact } from "@/types/ops";
 
 type ContactsTabProps = {
@@ -83,29 +84,27 @@ export default function ContactsTab({
 
     setSubmitting(true);
     setError(null);
-    const supabase = createSupabaseBrowserClient();
-    const { data, error: insertError } = await supabase
-      .from("contacts")
-      .insert({
+
+    const res = await opsApiPost<{ contact: Contact }>(
+      "/api/ops/contacts/create",
+      {
         business_id: businessId,
         name: form.name.trim(),
         title: form.title.trim() || null,
         phone: form.phone.trim() || null,
         email: form.email.trim() || null,
         warmth_level: form.warmth_level || null,
-        introduced_by: currentUserId,
-      })
-      .select("*")
-      .single();
+      },
+    );
 
     setSubmitting(false);
 
-    if (insertError || !data) {
-      setError(insertError?.message ?? "Unable to save contact.");
+    if (!res.ok) {
+      setError("Unable to save contact.");
       return;
     }
 
-    setContacts((prev) => [data as Contact, ...(prev ?? [])]);
+    setContacts((prev) => [res.data.contact, ...(prev ?? [])]);
     setForm(EMPTY_FORM);
     onMutated();
   }

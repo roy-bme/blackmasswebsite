@@ -1,14 +1,14 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element */
-
 import { useEffect, useState } from "react";
 
 import Avatar from "@/components/ops/ui/Avatar";
 import { cn } from "@/lib/ops/cn";
+import { isAllowedAttachment } from "@/lib/ops/attachments";
 import type { Activity } from "@/types/ops";
 
 import ComposeBox from "./ComposeBox";
+import SignedAttachment from "./SignedAttachment";
 import {
   ROLE_AVATAR_RING,
   formatRelativeTime,
@@ -67,7 +67,7 @@ export default function ThreadReplies({
           const authorRoleRing = author
             ? ROLE_AVATAR_RING[author.role]
             : "";
-          const attachments = reply.attachments ?? [];
+          const attachments = (reply.attachments ?? []).filter(isAllowedAttachment);
           return (
             <li key={reply.id} className="flex gap-3">
               <Avatar
@@ -93,23 +93,17 @@ export default function ThreadReplies({
                 ) : null}
                 {attachments.length > 0 ? (
                   <ul className="mt-1 flex flex-wrap gap-2">
-                    {attachments.slice(0, 4).map((url) => (
+                    {attachments.slice(0, 4).map((path) => (
                       <li
-                        key={url}
+                        key={path}
                         className="h-16 w-16 overflow-hidden border border-zinc-200 bg-zimx-offwhite"
                       >
-                        <a
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block h-full w-full"
-                        >
-                          <img
-                            src={url}
-                            alt="Attachment"
-                            className="h-full w-full object-cover"
-                          />
-                        </a>
+                        <SignedAttachment
+                          path={path}
+                          alt="Attachment"
+                          className="h-full w-full object-cover"
+                          wrapInLink
+                        />
                       </li>
                     ))}
                   </ul>
@@ -128,7 +122,7 @@ export default function ThreadReplies({
             lockedChannel={parent.channel}
             compact
             autoFocus
-            placeholder={"Write a reply\u2026"}
+            placeholder={"Write a reply…"}
             onPosted={onReplyClose}
           />
         </div>

@@ -7,7 +7,8 @@ import Button from "@/components/ops/ui/Button";
 import Select from "@/components/ops/ui/Select";
 import { cn } from "@/lib/ops/cn";
 import { SECTOR_LIST } from "@/lib/ops/sector-colors";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { opsApiPost, opsApiUpload } from "@/lib/ops/api-client";
+import SignedAttachment from "@/components/ops/Feed/SignedAttachment";
 import type { Business, BusinessStage } from "@/types/ops";
 
 import {
@@ -41,21 +42,17 @@ export default function OverviewTab({
   async function saveField(column: keyof Business, value: unknown) {
     setSavingField(column);
     setError(null);
-    const supabase = createSupabaseBrowserClient();
-    const { data, error: updateError } = await supabase
-      .from("businesses")
-      .update({ [column]: value })
-      .eq("id", business.id)
-      .select("id");
+    const res = await opsApiPost<{ id: string }>(
+      "/api/ops/businesses/update",
+      { id: business.id, patch: { [column]: value } },
+    );
     setSavingField(null);
-    if (updateError) {
-      setError(updateError.message);
-      return;
-    }
-    // RLS-blocked updates return no error but also no affected rows, so flag
-    // that explicitly rather than letting the UI pretend a save succeeded.
-    if (!data || data.length === 0) {
-      setError("Update was not saved. Check your permissions.");
+    if (!res.ok) {
+      setError(
+        res.status === 403
+          ? "You don't have permission to change that field."
+          : "Update was not saved.",
+      );
       return;
     }
     onMutated();
@@ -474,40 +471,30 @@ function PhotosSection({
     event.target.value = "";
     if (!file) return;
 
+    const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp"]);
+    if (!ALLOWED.has(file.type)) {
+      setError("Only JPEG, PNG, or WebP images are allowed.");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setError("Image must be under 10 MB.");
+      return;
+    }
+
     setUploading(true);
     setError(null);
-    const supabase = createSupabaseBrowserClient();
-    const path = `${businessId}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-    const { error: uploadError } = await supabase.storage
-      .from("photos")
-      .upload(path, file, { upsert: false });
-
-    if (uploadError) {
-      setUploading(false);
-      setError(uploadError.message);
-      return;
-    }
-
-    const { data: pub } = supabase.storage.from("photos").getPublicUrl(path);
-    const nextPhotos = [...photos, pub.publicUrl];
-
-    const { data, error: updateError } = await supabase
-      .from("businesses")
-      .update({ photos: nextPhotos })
-      .eq("id", businessId)
-      .select("id");
-
+    const form = new FormData();
+    form.set("file", file);
+    form.set("business_id", businessId);
+    const res = await opsApiUpload<{ path: string }>(
+      "/api/ops/businesses/photo",
+      form,
+    );
     setUploading(false);
-
-    if (updateError) {
-      setError(updateError.message);
+    if (!res.ok) {
+      setError("Upload failed.");
       return;
     }
-    if (!data || data.length === 0) {
-      setError("Photo record was not saved. Check your permissions.");
-      return;
-    }
-
     onMutated();
   }
 
@@ -543,13 +530,13 @@ function PhotosSection({
       ) : null}
       {photos.length > 0 ? (
         <ul className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {photos.map((url) => (
+          {photos.map((path) => (
             <li
-              key={url}
+              key={path}
               className="aspect-square overflow-hidden border border-zinc-200 bg-zimx-offwhite"
             >
-              <img
-                src={url}
+              <SignedAttachment
+                path={path}
                 alt="Business photo"
                 className="h-full w-full object-cover"
               />

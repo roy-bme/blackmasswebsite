@@ -9,7 +9,7 @@ import Input from "@/components/ops/ui/Input";
 import Select from "@/components/ops/ui/Select";
 import Textarea from "@/components/ops/ui/Textarea";
 import { cn } from "@/lib/ops/cn";
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { opsApiPost } from "@/lib/ops/api-client";
 
 import {
   PAIN_POINT_OPTIONS,
@@ -122,15 +122,13 @@ export default function NewIntroDialog({
     setSubmitting(true);
     setError(null);
 
-    const supabase = createSupabaseBrowserClient();
-    const { error: insertError } = await supabase
-      .from("introductions")
-      .insert({
+    const res = await opsApiPost<{ id: string }>(
+      "/api/ops/introductions/create",
+      {
         contact_name: form.contact_name.trim(),
         role: form.role.trim() || null,
         business: form.business.trim() || null,
         business_id: form.business_id,
-        introduced_by: currentUserId,
         how_connected: form.how_connected.trim() || null,
         why_relevant: form.why_relevant.trim() || null,
         pain_points_identified:
@@ -138,14 +136,13 @@ export default function NewIntroDialog({
         cross_border: form.cross_border,
         warmth: form.warmth,
         recommended_action: form.recommended_action.trim() || null,
-        status: "identified",
-        roy_approved: false,
-      });
+      },
+    );
 
     setSubmitting(false);
 
-    if (insertError) {
-      setError(insertError.message);
+    if (!res.ok) {
+      setError("Could not save introduction.");
       return;
     }
 

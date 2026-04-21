@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Script from "next/script";
+import { headers } from "next/headers";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ScrollToTop from "@/components/ScrollToTop";
@@ -103,15 +104,20 @@ export default function MarketingLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const nonce = headers().get("x-nonce") ?? undefined;
+  // Escape `</script>` (and any raw `<`) so a malicious value leaking into
+  // organizationSchema cannot close our tag and start an attacker script.
+  const ldJson = JSON.stringify(organizationSchema).replace(/</g, "\\u003c");
+
   return (
     <>
       <Script
         id="organization-schema"
         type="application/ld+json"
         strategy="afterInteractive"
-      >
-        {JSON.stringify(organizationSchema)}
-      </Script>
+        nonce={nonce}
+        dangerouslySetInnerHTML={{ __html: ldJson }}
+      />
       <Navbar />
       <main className="min-h-screen">{children}</main>
       <Footer />

@@ -1,45 +1,30 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { updateSupabaseSession } from "@/lib/supabase/middleware";
+import {
+  isIndabaHost,
+  isMarketingHost,
+  isUnknownHost,
+} from "@/lib/ops/host-allowlist";
 
 /**
- * Hostname-based router + Supabase session refresh.
+ * Hostname-based router + Supabase session refresh + CSP nonce injection.
  *
  * One Vercel project serves two surfaces:
  *   - blackmass.co.uk (and previews / localhost)  → public marketing
  *   - indaba.zimx.io  (and indaba.localhost, etc) → private ops portal
  *
- * Marketing pages live at top-level URLs (`/`, `/about`, ...). Portal pages
- * live under `app/indaba/*` on disk. For requests on an `indaba.*` hostname,
- * this middleware rewrites `/foo` → `/indaba/foo` so the user never sees the
- * `/indaba` prefix in their URL bar. On non-indaba hostnames, any direct hit
- * to `/indaba/*` returns 404 so the portal surface isn't discoverable from
- * the public domain.
- *
- * On the indaba host we additionally:
- *   1. Refresh the Supabase auth cookies on every request (so expiring
- *      access tokens get rotated transparently).
- *   2. Redirect unauthenticated requests to `/login`, except for the auth
- *      surface itself (`/login`, `/auth/*`).
- *   3. Redirect already-authenticated users away from `/login` and back to
- *      the portal root `/` (which rewrites to `/indaba`).
+ * This middleware:
+ *   1. Restricts access to `/indaba/*` on non-indaba hosts (404).
+ *   2. Refreshes Supabase auth cookies on every indaba request.
+ *   3. Redirects unauthenticated indaba requests to `/login` (preserving
+ *      the intended destination via ?next=).
+ *   4. Generates a per-request CSP nonce and rewrites the static
+ *      `NONCE_PLACEHOLDER` in the global CSP header to that nonce value.
  */
 
 const INDABA_PATH_PREFIX = "/indaba";
-
-// Visible (pre-rewrite) paths on the indaba host that do NOT require a
-// signed-in user. Everything else on the indaba host is gated.
 const PUBLIC_INDABA_PATHS = ["/login", "/auth"];
-
-function isIndabaHost(host: string | null): boolean {
-  if (!host) return false;
-  // Strip port, lowercase. Hostname may look like `indaba.zimx.io:3000`.
-  const hostname = host.split(":")[0].toLowerCase();
-  // Match any subdomain chain starting with `indaba.` so that
-  // `indaba.zimx.io`, `indaba.localhost`, and `indaba.preview.vercel.app`
-  // all resolve to the portal.
-  return hostname === "indaba" || hostname.startsWith("indaba.");
-}
 
 function isPublicIndabaPath(pathname: string): boolean {
   return PUBLIC_INDABA_PATHS.some(
@@ -59,63 +44,100 @@ function withNoIndex(response: NextResponse): NextResponse {
   return response;
 }
 
+function generateNonce(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  // Base64url without padding.
+  let str = "";
+  for (const b of bytes) str += String.fromCharCode(b);
+  return btoa(str).replace(/=+$/, "").replace(/\+/g, "-").replace(/\//g, "_");
+}
+
+function applyCspNonce(response: NextResponse, nonce: string) {
+  const csp = response.headers.get("content-security-policy");
+  if (csp && csp.includes("NONCE_PLACEHOLDER")) {
+    response.headers.set(
+      "content-security-policy",
+      csp.replaceAll("NONCE_PLACEHOLDER", nonce),
+    );
+  }
+  // Expose to RSC via a request header (server-side only).
+  response.headers.set("x-nonce", nonce);
+}
+
 export async function middleware(request: NextRequest) {
   const host = request.headers.get("host");
   const { pathname } = request.nextUrl;
   const onIndabaHost = isIndabaHost(host);
+  const onMarketing = isMarketingHost(host);
+  const nonce = generateNonce();
+
+  // Log (visible in Vercel logs) any request on an unknown host so we can
+  // tell at a glance if someone starts probing a made-up "indaba.*" subdomain.
+  if (host && isUnknownHost(host)) {
+    console.warn("unknown host", { host, pathname });
+  }
 
   if (!onIndabaHost) {
-    // Marketing host: hide the portal surface entirely. No auth logic here —
-    // the marketing site is fully public.
+    // Marketing (or unknown) host: hide the portal surface entirely.
     if (pathname === INDABA_PATH_PREFIX || pathname.startsWith(`${INDABA_PATH_PREFIX}/`)) {
       return new NextResponse("Not Found", { status: 404 });
     }
-    return NextResponse.next();
+    // Forward the nonce into the request headers so server components can
+    // read it via headers().get("x-nonce").
+    const headers = new Headers(request.headers);
+    headers.set("x-nonce", nonce);
+    const response = NextResponse.next({ request: { headers } });
+    applyCspNonce(response, nonce);
+    if (!onMarketing) {
+      response.headers.set("X-Robots-Tag", "noindex, nofollow, nocache");
+    }
+    return response;
   }
 
   // --- Indaba host ---------------------------------------------------------
 
-  // Refresh the Supabase session. `authResponse` has any rotated auth cookies
-  // attached; if we return a different response below we copy those over.
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+
   const { response: authResponse, user } = await updateSupabaseSession(request);
 
   const isPublic = isPublicIndabaPath(pathname);
 
-  // Signed-in users hitting /login get bounced to the portal root. They'll be
-  // routed onwards to /dashboard by the ops layout in a later phase.
   if (user && pathname === "/login") {
     const redirect = NextResponse.redirect(new URL("/", request.url));
-    return withNoIndex(copyAuthCookies(authResponse, redirect));
+    const copied = withNoIndex(copyAuthCookies(authResponse, redirect));
+    applyCspNonce(copied, nonce);
+    return copied;
   }
 
-  // Unauthenticated users are bounced to /login (preserving intended dest).
   if (!user && !isPublic) {
     const loginUrl = new URL("/login", request.url);
     if (pathname !== "/") {
       loginUrl.searchParams.set("next", pathname);
     }
     const redirect = NextResponse.redirect(loginUrl);
-    return withNoIndex(copyAuthCookies(authResponse, redirect));
+    const copied = withNoIndex(copyAuthCookies(authResponse, redirect));
+    applyCspNonce(copied, nonce);
+    return copied;
   }
 
-  // Path is allowed. Now apply the hostname rewrite `/foo` → `/indaba/foo`
-  // (unless the user already typed `/indaba/...` directly, which is legal
-  // but uncommon), preserving the Supabase cookies from the auth response.
   if (pathname === INDABA_PATH_PREFIX || pathname.startsWith(`${INDABA_PATH_PREFIX}/`)) {
-    return withNoIndex(authResponse);
+    const withHeaders = withNoIndex(authResponse);
+    applyCspNonce(withHeaders, nonce);
+    return withHeaders;
   }
 
   const rewritten = request.nextUrl.clone();
   rewritten.pathname = pathname === "/" ? INDABA_PATH_PREFIX : `${INDABA_PATH_PREFIX}${pathname}`;
   const rewriteResponse = NextResponse.rewrite(rewritten, {
-    request: { headers: request.headers },
+    request: { headers: requestHeaders },
   });
-  return withNoIndex(copyAuthCookies(authResponse, rewriteResponse));
+  const finalResponse = withNoIndex(copyAuthCookies(authResponse, rewriteResponse));
+  applyCspNonce(finalResponse, nonce);
+  return finalResponse;
 }
 
-// Run on everything except Next.js internals and static assets.
-// (Matcher syntax is literal-character based; the negative lookahead matches
-// any path whose first segment is not one of the listed reserved names.)
 export const config = {
   matcher: [
     "/((?!_next/static|_next/image|favicon.ico|icon.svg|robots.txt|sitemap.xml|images/).*)",

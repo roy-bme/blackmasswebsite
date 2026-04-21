@@ -1,6 +1,7 @@
 import Button from "@/components/ops/ui/Button";
 import ZitfResponseList from "@/components/ops/Zitf/ZitfResponseList";
 import { requireModuleAccess } from "@/lib/ops/auth";
+import { resolveFlash } from "@/lib/ops/flash";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import {
   ZITF_TABLES,
@@ -23,9 +24,7 @@ export default async function ZitfListPage({
   searchParams,
 }: ZitfListPageProps) {
   const user = await requireModuleAccess("/indaba/zitf");
-  const flash = searchParams.flash
-    ? decodeURIComponent(searchParams.flash)
-    : null;
+  const flash = resolveFlash(searchParams.flash);
   const supabase = createSupabaseServerClient();
 
   const { data, error } = await supabase

@@ -2,16 +2,24 @@ import { type NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
-import {
-  getSupabaseAnonKey,
-  getSupabaseUrl,
-} from "@/lib/supabase/env";
+import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/supabase/env";
+import { assertSameOrigin } from "@/lib/ops/csrf";
+import { consume, requestIp } from "@/lib/ratelimit";
 
 /**
- * Sign-out endpoint. POST-only to prevent CSRF via drive-by GET.
- * After clearing the session we bounce the user back to /login.
+ * Sign-out endpoint. POST-only with a same-origin check to prevent CSRF
+ * via drive-by POST. After clearing the session we bounce the user back
+ * to /login.
  */
 export async function POST(request: NextRequest) {
+  const csrf = assertSameOrigin(request);
+  if (csrf) return csrf;
+
+  const rl = await consume("signout", requestIp(request));
+  if (!rl.allowed) {
+    return new NextResponse("too many requests", { status: 429 });
+  }
+
   const url = new URL(request.url);
   const cookieStore = cookies();
   const response = NextResponse.redirect(new URL("/login", url.origin), {

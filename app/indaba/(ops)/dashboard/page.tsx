@@ -4,6 +4,7 @@ import Pill, { type PillTone } from "@/components/ops/ui/Pill";
 import ZitfSummaryTile from "@/components/ops/Zitf/ZitfSummaryTile";
 import { cn } from "@/lib/ops/cn";
 import { requireModuleAccess } from "@/lib/ops/auth";
+import { resolveFlash } from "@/lib/ops/flash";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getZoneBounds, pointInBounds } from "@/lib/ops/zone-bounds";
 import type {
@@ -73,9 +74,7 @@ export default async function DashboardPage({
   const user = await requireModuleAccess("/indaba/dashboard");
   const supabase = createSupabaseServerClient();
 
-  const flash = searchParams.flash
-    ? decodeURIComponent(searchParams.flash)
-    : null;
+  const flash = resolveFlash(searchParams.flash);
 
   const isAdmin = user.role === "admin";
   const isOps = user.role === "ops";

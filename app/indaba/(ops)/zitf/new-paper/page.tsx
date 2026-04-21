@@ -24,15 +24,11 @@ export default async function NewPaperResponsePage() {
   const { user } = result;
 
   if (!canViewZitf(user.role)) {
-    const flash = encodeURIComponent("You don't have access to ZITF.");
-    redirect(`/indaba/dashboard?flash=${flash}`);
+    redirect(`/indaba/dashboard?flash=no_zitf_access`);
   }
 
   if (!canWriteZitfPaper(user.role)) {
-    const flash = encodeURIComponent(
-      "Only ops and admin can key in paper responses.",
-    );
-    redirect(`/indaba/zitf?flash=${flash}`);
+    redirect(`/indaba/zitf?flash=no_paper_write`);
   }
 
   return (

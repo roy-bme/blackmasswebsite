@@ -1,45 +1,34 @@
 /**
- * Reverse geocoding helpers for the Indaba map pin-drop flow.
+ * Client-side wrapper around /api/ops/reverse-geocode.
  *
- * Calls the public Nominatim endpoint to resolve a dropped pin's lat/lng to a
- * short, human-readable address like "Fife Street, CBD, Bulawayo". Consumers
- * are responsible for showing a loading state and falling back to raw coords
- * when the lookup fails (we return `null` rather than throwing).
- *
- * Nominatim's usage policy asks callers to send a descriptive User-Agent. The
- * Fetch spec forbids setting User-Agent from the browser, so the browser's own
- * UA is what actually reaches their server; the referrer identifies us.
+ * Nominatim is never called directly from the browser; this proxy
+ * preserves the same return contract (short "street, area, city" string or
+ * null) and lets us keep Nominatim's attribution / rate-limit obligations
+ * in one server-side place.
  */
-
-const NOMINATIM_ENDPOINT = "https://nominatim.openstreetmap.org/reverse";
-const USER_AGENT = "Indaba-Bulawayo-Ops/1.0 (ops@zimx.finance)";
 
 export async function reverseGeocode(
   lat: number,
   lng: number,
   signal?: AbortSignal,
 ): Promise<string | null> {
-  const url = `${NOMINATIM_ENDPOINT}?format=jsonv2&lat=${encodeURIComponent(
-    lat.toFixed(6),
-  )}&lon=${encodeURIComponent(lng.toFixed(6))}&zoom=18&addressdetails=1`;
+  const params = new URLSearchParams({
+    lat: lat.toFixed(6),
+    lng: lng.toFixed(6),
+  });
 
   try {
-    const res = await fetch(url, {
-      signal,
-      headers: {
-        Accept: "application/json",
-        "User-Agent": USER_AGENT,
+    const res = await fetch(
+      `/api/ops/reverse-geocode?${params.toString()}`,
+      {
+        signal,
+        credentials: "same-origin",
+        headers: { accept: "application/json" },
       },
-    });
+    );
     if (!res.ok) return null;
-    const data = (await res.json()) as { display_name?: string };
-    if (!data.display_name) return null;
-    return data.display_name
-      .split(",")
-      .slice(0, 3)
-      .map((segment) => segment.trim())
-      .filter(Boolean)
-      .join(", ");
+    const body = (await res.json()) as { address?: string | null };
+    return typeof body.address === "string" && body.address ? body.address : null;
   } catch {
     return null;
   }

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import type { User } from "@supabase/supabase-js";
 
 import { getSupabaseAnonKey, getSupabaseUrl } from "./env";
 
@@ -10,16 +11,26 @@ import { getSupabaseAnonKey, getSupabaseUrl } from "./env";
  * AND the resolved user, so callers (e.g. middleware.ts) can decide whether
  * to allow, redirect, or block the request without issuing a second auth
  * round-trip.
- *
- * This follows the @supabase/ssr Next.js pattern: create a client bound to
- * the request cookies, and mirror any cookie writes onto both the request
- * (so downstream handlers see the refreshed session) and the response
- * (so the browser stores the new tokens).
  */
-export async function updateSupabaseSession(request: NextRequest) {
+export async function updateSupabaseSession(request: NextRequest): Promise<{
+  response: NextResponse;
+  user: User | null;
+}> {
   let response = NextResponse.next({
     request: { headers: request.headers },
   });
+
+  // Cheap short-circuit: if the request carries no Supabase auth cookie at
+  // all, there is no session to refresh. Calling getUser() in that case
+  // still reaches the Supabase API over HTTPS and adds round-trip latency
+  // to every anonymous request (including /login, /auth/*, preview-URL
+  // probes, etc.). Skipping saves cost and reduces our attack surface.
+  const hasAuthCookie = request.cookies.getAll().some((c) => {
+    return c.name.startsWith("sb-") && c.name.endsWith("-auth-token");
+  });
+  if (!hasAuthCookie) {
+    return { response, user: null };
+  }
 
   const supabase = createServerClient(getSupabaseUrl(), getSupabaseAnonKey(), {
     cookies: {

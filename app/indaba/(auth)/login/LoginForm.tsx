@@ -2,18 +2,21 @@
 
 import { useState, type FormEvent } from "react";
 
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { safeNext } from "@/lib/ops/next-param";
 
 type Status =
   | { kind: "idle" }
   | { kind: "sending" }
   | { kind: "sent"; email: string }
-  | { kind: "error"; message: string };
+  | { kind: "error" };
 
 type LoginFormProps = {
-  /** Path to return to after successful sign-in, forwarded via the callback URL. */
+  /** Post-auth redirect path, forwarded to /auth/callback. Validated server-side. */
   next?: string;
 };
+
+const GENERIC_FAILURE =
+  "We couldn't send the link. Try again in a minute.";
 
 export default function LoginForm({ next }: LoginFormProps) {
   const [email, setEmail] = useState("");
@@ -26,23 +29,20 @@ export default function LoginForm({ next }: LoginFormProps) {
 
     setStatus({ kind: "sending" });
 
-    const supabase = createSupabaseBrowserClient();
+    const nextPath = safeNext(next ?? null);
 
-    const callbackUrl = new URL("/auth/callback", window.location.origin);
-    if (next) callbackUrl.searchParams.set("next", next);
-
-    const { error } = await supabase.auth.signInWithOtp({
-      email: trimmed,
-      options: {
-        emailRedirectTo: callbackUrl.toString(),
-        // Do NOT auto-create accounts — only pre-provisioned ops staff can
-        // sign in. Unknown addresses silently no-op on Supabase's end.
-        shouldCreateUser: false,
+    const res = await fetch("/api/auth/signin", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "content-type": "application/json",
+        accept: "application/json",
       },
-    });
+      body: JSON.stringify({ email: trimmed, next: nextPath }),
+    }).catch(() => null);
 
-    if (error) {
-      setStatus({ kind: "error", message: error.message });
+    if (!res || !res.ok) {
+      setStatus({ kind: "error" });
       return;
     }
 
@@ -80,12 +80,12 @@ export default function LoginForm({ next }: LoginFormProps) {
       <div aria-live="polite" className="mt-6 min-h-[1.5rem] text-[14px]">
         {status.kind === "sent" && (
           <p className="text-white/70">
-            Check <span className="text-white">{status.email}</span> for a sign-in link.
+            If <span className="text-white">{status.email}</span> is registered, a link is on its way.
             You can close this tab.
           </p>
         )}
         {status.kind === "error" && (
-          <p className="text-red-300">Couldn&apos;t send the link: {status.message}</p>
+          <p className="text-red-300">{GENERIC_FAILURE}</p>
         )}
       </div>
     </form>

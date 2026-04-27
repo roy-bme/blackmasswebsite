@@ -17,6 +17,8 @@ export const AUTH_ERROR_TOKENS = {
   account_disabled: "Your portal access has been disabled. Contact an admin.",
   profile_lookup_failed:
     "We couldn't load your profile. Try again in a minute.",
+  reset_link_invalid:
+    "That reset link is invalid or has expired. Request a new one.",
   unknown: "Something went wrong. Try signing in again.",
 } as const;
 

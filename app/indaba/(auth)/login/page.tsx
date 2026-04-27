@@ -1,12 +1,13 @@
 import Eyebrow from "@/components/ops/ui/Eyebrow";
 import IndabaLogo from "@/components/ops/ui/IndabaLogo";
 import { resolveAuthErrorToken } from "@/lib/ops/auth-error";
+import { resolveFlash } from "@/lib/ops/flash";
 import { safeNext, DEFAULT_NEXT } from "@/lib/ops/next-param";
 
 import LoginForm from "./LoginForm";
 
 type LoginPageProps = {
-  searchParams: { next?: string; error?: string };
+  searchParams: { next?: string; error?: string; flash?: string };
 };
 
 const SECTOR_PINS: Array<{
@@ -29,6 +30,7 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
   const error = searchParams.error
     ? resolveAuthErrorToken(searchParams.error)
     : undefined;
+  const flash = resolveFlash(searchParams.flash);
 
   return (
     <div className="min-h-screen bg-ink-700 text-white">
@@ -47,7 +49,7 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
               Sign in to the operations portal.
             </p>
 
-            <LoginForm next={next} error={error} />
+            <LoginForm next={next} error={error} flash={flash} />
 
             <p className="mt-8 text-center font-mono text-[10px] uppercase tracking-eyebrow text-fg-dim">
               Internal tool · access controlled by Blackmass admin

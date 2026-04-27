@@ -10,6 +10,8 @@ export type OpsUser = {
   email: string;
   name: string;
   role: UserRole;
+  /** Set by admins via auth.users.raw_user_meta_data; forces a password change on next sign-in. */
+  passwordChangeRequired: boolean;
 };
 
 export type OpsProfileResult =
@@ -67,6 +69,9 @@ export const loadOpsProfile = cache(async (): Promise<OpsProfileResult> => {
     return { status: "disabled" };
   }
 
+  const meta = (authUser.user_metadata ?? {}) as Record<string, unknown>;
+  const passwordChangeRequired = meta.password_change_required === true;
+
   return {
     status: "ok",
     user: {
@@ -74,6 +79,7 @@ export const loadOpsProfile = cache(async (): Promise<OpsProfileResult> => {
       email: row.email,
       name: row.name,
       role: row.role,
+      passwordChangeRequired,
     },
   };
 });

@@ -40,6 +40,16 @@ const limiters = {
   signInEmail: createLimiter({ requests: 10, window: "1h", prefix: "rl:signin:email" }),
   authCallback: createLimiter({ requests: 10, window: "15m", prefix: "rl:authcb" }),
   signout: createLimiter({ requests: 30, window: "1h", prefix: "rl:signout" }),
+  passwordResetIp: createLimiter({
+    requests: 5,
+    window: "15m",
+    prefix: "rl:pwreset:ip",
+  }),
+  passwordResetEmail: createLimiter({
+    requests: 5,
+    window: "1h",
+    prefix: "rl:pwreset:email",
+  }),
   opsApi: createLimiter({ requests: 60, window: "1m", prefix: "rl:opsapi" }),
   health: createLimiter({ requests: 60, window: "1m", prefix: "rl:health" }),
   geocode: createLimiter({ requests: 30, window: "1m", prefix: "rl:geocode" }),

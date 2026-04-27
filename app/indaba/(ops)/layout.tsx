@@ -47,6 +47,10 @@ export default async function OpsLayout({
     redirect("/auth/auth-error?reason=profile_lookup_failed");
   }
 
+  if (result.user.passwordChangeRequired) {
+    redirect("/auth/change-password");
+  }
+
   const supabase = createSupabaseServerClient();
   const role = result.user.role;
 

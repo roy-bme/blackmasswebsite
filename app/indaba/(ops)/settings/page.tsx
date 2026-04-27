@@ -2,17 +2,25 @@ import Avatar from "@/components/ops/ui/Avatar";
 import Button from "@/components/ops/ui/Button";
 import PageHeader from "@/components/ops/PageHeader";
 import { requireModuleAccess } from "@/lib/ops/auth";
+import { resolveFlash } from "@/lib/ops/flash";
+
+import ChangePasswordDialog from "./ChangePasswordDialog";
 
 export const dynamic = "force-dynamic";
 
-export default async function SettingsPage() {
-  const user = await requireModuleAccess("/indaba/settings");
+type SettingsPageProps = {
+  searchParams: { flash?: string };
+};
 
-  const fields: Array<[string, string]> = [
+export default async function SettingsPage({ searchParams }: SettingsPageProps) {
+  const user = await requireModuleAccess("/indaba/settings");
+  const flash = resolveFlash(searchParams.flash);
+
+  const fields: Array<[string, React.ReactNode]> = [
     ["Name", user.name],
     ["Email", user.email],
     ["Role", user.role],
-    ["Password", "••••••••••••"],
+    ["Password", <ChangePasswordDialog key="pw" />],
   ];
 
   return (
@@ -24,6 +32,15 @@ export default async function SettingsPage() {
       />
 
       <div className="px-4 py-5 md:px-6">
+        {flash ? (
+          <p
+            role="status"
+            className="mb-4 max-w-md border border-status-ok/30 bg-status-ok/[0.06] px-3.5 py-3 text-[13px] text-status-ok"
+          >
+            {flash}
+          </p>
+        ) : null}
+
         <div className="flex items-center gap-4">
           <Avatar name={user.name} size="xl" />
           <div>

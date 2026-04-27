@@ -15,6 +15,9 @@ export const FLASH_MESSAGES = {
   promoted: "Suggestion promoted to Identified.",
   approved: "Intro approved.",
   flag_resolved: "Compliance flag resolved.",
+  password_changed: "Password updated.",
+  password_reset_email_sent:
+    "If that email is registered, a reset link is on its way.",
 } as const;
 
 export type FlashKey = keyof typeof FLASH_MESSAGES;

@@ -57,18 +57,17 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
           </div>
         </section>
 
-        <section className="indaba-map-placeholder relative hidden border-l border-line-10 md:block">
+        <section
+          aria-hidden="true"
+          className="indaba-map-placeholder relative hidden border-l border-line-10 md:block"
+        >
           <div className="absolute inset-0 flex flex-col justify-between p-9">
-            <Eyebrow gold>bulawayo / 20.1574°S 28.5860°E</Eyebrow>
+            <Eyebrow gold>20.1574°S 28.5860°E</Eyebrow>
             <div>
-              <Eyebrow>active pilot</Eyebrow>
-              <h2 className="mt-2 text-[32px] font-light leading-none tracking-tight">
+              <IndabaLogo size={22} glyphOnly />
+              <h2 className="mt-3 text-[32px] font-light leading-none tracking-tight">
                 Bulawayo · ZW
               </h2>
-              <p className="mt-2 max-w-[360px] text-[13px] text-fg-mute">
-                Mapped 87 businesses · 12 supply-chain links · 3 active loops
-                detected.
-              </p>
             </div>
           </div>
           {SECTOR_PINS.map((pin, i) => (

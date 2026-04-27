@@ -9,10 +9,6 @@ type TextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement> & {
   containerClassName?: string;
 };
 
-/**
- * Multiline text input. Mirrors the visual contract of `Input` so the two
- * compose cleanly inside the same form.
- */
 const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textarea(
   {
     label,
@@ -36,7 +32,7 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textare
       {label ? (
         <label
           htmlFor={fieldId}
-          className="font-mono text-[11px] uppercase tracking-tag text-zinc-500"
+          className="font-mono text-[10px] uppercase tracking-eyebrow text-fg-dim"
         >
           {label}
         </label>
@@ -50,11 +46,11 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textare
         aria-invalid={Boolean(error) || undefined}
         aria-describedby={errorId ?? hintId}
         className={cn(
-          "w-full border border-zinc-200 bg-white px-3 py-2.5 text-[14px] text-zimx-black",
-          "placeholder:text-zinc-500 resize-y outline-none focus:outline-none",
-          "focus:border-zimx-black transition-colors",
-          error && "border-zimx-red focus:border-zimx-red",
-          disabled && "opacity-60 bg-zimx-offwhite",
+          "w-full border border-line-15 bg-ink-700 px-3 py-2.5 text-[14px] text-white",
+          "placeholder:text-fg-faint resize-y outline-none focus:outline-none",
+          "focus:border-zimx-gold transition-colors",
+          error && "border-status-bad focus:border-status-bad",
+          disabled && "opacity-60",
           className,
         )}
         {...rest}
@@ -63,12 +59,12 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function Textare
       {error ? (
         <p
           id={errorId}
-          className="font-mono text-[11px] uppercase tracking-tag text-zimx-red"
+          className="font-mono text-[10px] uppercase tracking-eyebrow text-status-bad"
         >
           {error}
         </p>
       ) : hint ? (
-        <p id={hintId} className="text-[12px] text-zinc-500">
+        <p id={hintId} className="text-[11px] text-fg-mute">
           {hint}
         </p>
       ) : null}

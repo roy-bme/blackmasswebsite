@@ -1,7 +1,6 @@
-import Link from "next/link";
-
-import Container from "@/components/Container";
-import Logo from "@/components/ops/Logo";
+import Button from "@/components/ops/ui/Button";
+import Eyebrow from "@/components/ops/ui/Eyebrow";
+import IndabaLogo from "@/components/ops/ui/IndabaLogo";
 import {
   errorMessageForToken,
   resolveAuthErrorToken,
@@ -16,23 +15,27 @@ export default function AuthErrorPage({ searchParams }: AuthErrorPageProps) {
   const message = errorMessageForToken(token);
 
   return (
-    <section className="pt-32 md:pt-40 pb-24">
-      <Container>
-        <Logo size="lg" variant="light" className="mb-10" />
-        <p className="font-mono text-[12px] uppercase tracking-[1px] text-white/50">
-          INDABA / SIGN IN
-        </p>
-        <h1 className="mt-6 font-mono font-light leading-[1.0] text-white text-[48px] md:text-[72px]">
-          SIGN-IN FAILED
-        </h1>
-        <p className="mt-8 max-w-xl text-[16px] text-white/70">{message}</p>
-        <Link
-          href="/login"
-          className="mt-10 inline-flex items-center border border-white/80 px-6 py-3 font-mono text-[12px] uppercase tracking-[1.5px] text-white transition-colors hover:bg-white hover:text-black"
-        >
-          Try again
-        </Link>
-      </Container>
-    </section>
+    <div className="min-h-screen bg-ink-700 text-white">
+      <header className="flex h-14 items-center border-b border-line-10 px-6">
+        <IndabaLogo size={18} />
+      </header>
+
+      <main className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center px-6 py-10">
+        <div className="w-full max-w-md">
+          <Eyebrow className="text-status-bad">auth error · 401</Eyebrow>
+          <h1 className="mt-3 text-[28px] font-light leading-tight tracking-tight md:text-[36px]">
+            can&apos;t sign you in.
+          </h1>
+          <p className="mt-4 text-[14px] leading-relaxed text-fg-mute">
+            {message}
+          </p>
+          <div className="mt-8 flex flex-col gap-2">
+            <Button href="/login" variant="primary" fullWidth>
+              Try again
+            </Button>
+          </div>
+        </div>
+      </main>
+    </div>
   );
 }

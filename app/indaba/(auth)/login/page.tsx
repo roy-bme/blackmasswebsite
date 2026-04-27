@@ -1,34 +1,94 @@
-import Container from "@/components/Container";
-import Logo from "@/components/ops/Logo";
+import Eyebrow from "@/components/ops/ui/Eyebrow";
+import IndabaLogo from "@/components/ops/ui/IndabaLogo";
+import { resolveAuthErrorToken } from "@/lib/ops/auth-error";
 import { safeNext, DEFAULT_NEXT } from "@/lib/ops/next-param";
 
 import LoginForm from "./LoginForm";
 
 type LoginPageProps = {
-  searchParams: { next?: string };
+  searchParams: { next?: string; error?: string };
 };
+
+const SECTOR_PINS: Array<{
+  x: number;
+  y: number;
+  color: string;
+}> = [
+  { x: 34, y: 42, color: "#BA7517" },
+  { x: 58, y: 38, color: "#E24B4A" },
+  { x: 64, y: 58, color: "#378ADD" },
+  { x: 44, y: 66, color: "#1D9E75" },
+  { x: 72, y: 46, color: "#7F77DD" },
+  { x: 28, y: 62, color: "#D4537E" },
+  { x: 50, y: 50, color: "#E6A83C" },
+];
 
 export default function LoginPage({ searchParams }: LoginPageProps) {
   const resolved = safeNext(searchParams.next ?? null);
   const next = resolved === DEFAULT_NEXT ? undefined : resolved;
+  const error = searchParams.error
+    ? resolveAuthErrorToken(searchParams.error)
+    : undefined;
 
   return (
-    <section className="pt-32 md:pt-40 pb-24">
-      <Container>
-        <Logo size="lg" variant="light" className="mb-10" />
-        <p className="font-mono text-[12px] uppercase tracking-[1px] text-white/50">
-          INDABA / SIGN IN
-        </p>
-        <h1 className="mt-6 font-mono font-light leading-[1.0] text-white text-[48px] md:text-[72px]">
-          SIGN IN
-        </h1>
-        <p className="mt-8 max-w-xl text-[16px] text-white/70">
-          Enter your Blackmass email address. We&apos;ll send a magic link that signs
-          you in for this session — no password required.
-        </p>
+    <div className="min-h-screen bg-ink-700 text-white">
+      <header className="flex h-14 items-center border-b border-line-10 px-6">
+        <IndabaLogo size={18} />
+      </header>
 
-        <LoginForm next={next} />
-      </Container>
-    </section>
+      <div className="grid min-h-[calc(100vh-3.5rem)] md:grid-cols-2">
+        <section className="flex items-center justify-center px-6 py-10 md:px-16 md:py-16">
+          <div className="w-full max-w-md">
+            <Eyebrow gold>indaba / sign in</Eyebrow>
+            <h1 className="mt-3 text-[40px] font-light leading-none tracking-tight md:text-[48px]">
+              welcome back.
+            </h1>
+            <p className="mt-3 text-[13px] text-fg-mute">
+              Sign in to the operations portal.
+            </p>
+
+            <LoginForm next={next} error={error} />
+
+            <p className="mt-8 text-center font-mono text-[10px] uppercase tracking-eyebrow text-fg-dim">
+              Internal tool · access controlled by Blackmass admin
+            </p>
+          </div>
+        </section>
+
+        <section className="indaba-map-placeholder relative hidden border-l border-line-10 md:block">
+          <div className="absolute inset-0 flex flex-col justify-between p-9">
+            <Eyebrow gold>bulawayo / 20.1574°S 28.5860°E</Eyebrow>
+            <div>
+              <Eyebrow>active pilot</Eyebrow>
+              <h2 className="mt-2 text-[32px] font-light leading-none tracking-tight">
+                Bulawayo · ZW
+              </h2>
+              <p className="mt-2 max-w-[360px] text-[13px] text-fg-mute">
+                Mapped 87 businesses · 12 supply-chain links · 3 active loops
+                detected.
+              </p>
+            </div>
+          </div>
+          {SECTOR_PINS.map((pin, i) => (
+            <span
+              key={i}
+              className="absolute h-2.5 w-2.5"
+              style={{
+                left: `${pin.x}%`,
+                top: `${pin.y}%`,
+                background: pin.color,
+                boxShadow: "0 0 0 2px rgba(20,22,26,0.6)",
+              }}
+            />
+          ))}
+        </section>
+      </div>
+
+      <footer className="px-6 pb-6 text-center md:hidden">
+        <p className="font-mono text-[9px] uppercase tracking-eyebrow text-fg-dim">
+          Blackmass Enterprises Ltd · v1.0
+        </p>
+      </footer>
+    </div>
   );
 }

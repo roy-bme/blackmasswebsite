@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import OpsShell from "@/components/ops/OpsShell";
 import { loadOpsProfile } from "@/lib/ops/auth";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 // The /indaba URL space is served exclusively on the indaba.zimx.io hostname
 // via hostname-based middleware rewrites. Robots are blocked both here (via
@@ -22,13 +23,9 @@ export const metadata: Metadata = {
 };
 
 /**
- * Ops portal layout.
- *
- * Guarantees that every descendant route renders with a signed-in user whose
- * `public.users` row exists and is active. Middleware already blocks
- * anonymous traffic; this second check covers the edge case where the
- * Supabase auth user exists but the corresponding row in `public.users` is
- * missing or deactivated (orphan / disabled account).
+ * Ops portal layout. Pulls the role-aware nav badges (unread feed, open
+ * compliance flags, pending intros) once at the layout level so OpsShell can
+ * render them consistently across every module page.
  */
 export default async function OpsLayout({
   children,
@@ -50,5 +47,40 @@ export default async function OpsLayout({
     redirect("/auth/auth-error?reason=profile_lookup_failed");
   }
 
-  return <OpsShell user={result.user}>{children}</OpsShell>;
+  const supabase = createSupabaseServerClient();
+  const role = result.user.role;
+
+  // Counts the shell uses to show notification dots. Each `select head:true`
+  // is a single round-trip; failures fall back to undefined so the shell just
+  // hides the dot rather than blocking the layout.
+  const [feedRes, complianceRes, introsRes] = await Promise.all([
+    supabase
+      .from("activities")
+      .select("id", { count: "exact", head: true }),
+    role === "admin" || role === "compliance"
+      ? supabase
+          .from("compliance_flags")
+          .select("id", { count: "exact", head: true })
+          .eq("status", "open")
+      : Promise.resolve({ count: 0 }),
+    role === "admin"
+      ? supabase
+          .from("introductions")
+          .select("id", { count: "exact", head: true })
+          .eq("roy_approved", false)
+      : Promise.resolve({ count: 0 }),
+  ]);
+
+  const badges = {
+    feed: feedRes.count ?? undefined,
+    compliance:
+      "count" in complianceRes ? complianceRes.count ?? undefined : undefined,
+    intros: "count" in introsRes ? introsRes.count ?? undefined : undefined,
+  };
+
+  return (
+    <OpsShell user={result.user} badges={badges}>
+      {children}
+    </OpsShell>
+  );
 }

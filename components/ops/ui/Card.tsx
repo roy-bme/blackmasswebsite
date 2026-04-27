@@ -2,41 +2,53 @@ import { forwardRef, type HTMLAttributes, type ReactNode } from "react";
 
 import { cn } from "@/lib/ops/cn";
 
-export type CardPadding = "none" | "sm" | "md" | "lg";
+export type CardPadding = "none" | "sm" | "md" | "lg" | "xl";
 
 const PADDING: Record<CardPadding, string> = {
   none: "p-0",
-  sm: "p-4",
-  md: "p-6",
-  lg: "p-8",
+  sm: "p-3.5",
+  md: "p-4",
+  lg: "p-5",
+  xl: "p-6",
+};
+
+export type CardAccent = "gold" | "ok" | "warn" | "bad" | "info";
+
+const ACCENTS: Record<CardAccent, string> = {
+  gold: "border-l-2 border-l-zimx-gold",
+  ok: "border-l-2 border-l-status-ok",
+  warn: "border-l-2 border-l-status-warn",
+  bad: "border-l-2 border-l-status-bad",
+  info: "border-l-2 border-l-status-info",
 };
 
 type CardProps = HTMLAttributes<HTMLDivElement> & {
   padding?: CardPadding;
-  /** Drop the default white surface — use the parent's background. */
+  /** Render with no background — for cards on a transparent surface. */
   bare?: boolean;
-  /** Subtle hover lift, for clickable cards. */
+  /** Optional 2px coloured left stripe — see ACCENTS map. */
+  accent?: CardAccent;
+  /** Subtle hover state, for cards that act as buttons. */
   interactive?: boolean;
 };
 
 /**
- * Card surface — a flat, square-cornered container that matches the rest of
- * the ops portal's "no rounded corners" rule. Use Card.Header / Card.Body /
- * Card.Footer for vertical structure when you need explicit dividers.
+ * Indaba card — flat ink-800 surface with hairline border, optional gold/ok
+ * left stripe. Header / Body / Footer sections layered with hairline dividers.
  */
 const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
-  { padding = "md", bare, interactive, className, children, ...rest },
+  { padding = "md", bare, accent, interactive, className, children, ...rest },
   ref,
 ) {
   return (
     <div
       ref={ref}
       className={cn(
-        "border border-zinc-200",
-        bare ? "bg-transparent" : "bg-white",
+        "border border-line-10",
+        bare ? "bg-transparent" : "bg-ink-800",
+        accent && ACCENTS[accent],
         PADDING[padding],
-        interactive &&
-          "transition-shadow hover:shadow-[0_2px_0_0_rgba(27,27,27,1)] cursor-pointer",
+        interactive && "transition-colors hover:bg-ink-700 cursor-pointer",
         className,
       )}
       {...rest}
@@ -56,7 +68,7 @@ const CardHeader = forwardRef<HTMLDivElement, SectionProps>(function CardHeader(
     <div
       ref={ref}
       className={cn(
-        "flex items-start justify-between gap-4 border-b border-zinc-200 px-6 py-4",
+        "flex items-start justify-between gap-4 border-b border-line-10 px-4 py-3",
         className,
       )}
       {...rest}
@@ -71,7 +83,7 @@ const CardBody = forwardRef<HTMLDivElement, SectionProps>(function CardBody(
   ref,
 ) {
   return (
-    <div ref={ref} className={cn("px-6 py-5", className)} {...rest}>
+    <div ref={ref} className={cn("px-4 py-4", className)} {...rest}>
       {children}
     </div>
   );
@@ -85,7 +97,7 @@ const CardFooter = forwardRef<HTMLDivElement, SectionProps>(function CardFooter(
     <div
       ref={ref}
       className={cn(
-        "flex items-center justify-end gap-3 border-t border-zinc-200 px-6 py-4",
+        "flex items-center justify-end gap-2 border-t border-line-10 px-4 py-3",
         className,
       )}
       {...rest}
@@ -103,7 +115,7 @@ const CardTitle = forwardRef<
     <h3
       ref={ref}
       className={cn(
-        "font-mono text-[14px] uppercase tracking-tag text-zimx-black",
+        "font-mono text-[11px] uppercase tracking-eyebrow text-fg-dim",
         className,
       )}
       {...rest}
@@ -120,7 +132,7 @@ const CardDescription = forwardRef<
   return (
     <p
       ref={ref}
-      className={cn("mt-1 text-[13px] text-zinc-500", className)}
+      className={cn("mt-1 text-[13px] text-fg-mute", className)}
       {...rest}
     >
       {children}

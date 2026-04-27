@@ -9,7 +9,7 @@ type EmptyStateProps = {
   eyebrow?: string;
   title: string;
   description?: ReactNode;
-  /** Primary CTA — e.g. <Button href="/indaba/projects/new">New project</Button> */
+  /** Primary CTA. */
   action?: ReactNode;
   /** Optional secondary action rendered next to the primary one. */
   secondaryAction?: ReactNode;
@@ -17,13 +17,13 @@ type EmptyStateProps = {
 };
 
 /**
- * Empty-state surface used by lists, search results, and not-yet-populated
- * dashboards. Always shows the indaba tagline footer so users have a quiet
- * reminder of the product's purpose even when there's nothing to look at.
+ * Empty-state surface — dashed line-15 border, mono "EMPTY" eyebrow, 14px
+ * headline, 12px fg.mute body. Matches `screens/modules.jsx` empty-state
+ * patterns for compliance, directory lanes, etc.
  */
 export default function EmptyState({
   icon,
-  eyebrow,
+  eyebrow = "empty",
   title,
   description,
   action,
@@ -33,42 +33,34 @@ export default function EmptyState({
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center border border-dashed border-zinc-200 bg-white px-6 py-16 text-center",
+        "flex flex-col items-start border border-dashed border-line-15 bg-transparent px-4 py-5",
         className,
       )}
     >
       {icon ? (
-        <div className="mb-4 inline-flex h-12 w-12 items-center justify-center text-zinc-500">
+        <div className="mb-3 inline-flex h-8 w-8 items-center justify-center text-fg-dim">
           {icon}
         </div>
       ) : null}
 
-      {eyebrow ? (
-        <p className="font-mono text-[11px] uppercase tracking-tag text-zinc-500">
-          {eyebrow}
-        </p>
-      ) : null}
+      <p className="font-mono text-[10px] uppercase tracking-eyebrow text-fg-dim">
+        {eyebrow}
+      </p>
 
-      <h3 className="mt-2 font-mono text-[18px] uppercase tracking-tag text-zimx-black">
-        {title}
-      </h3>
+      <h3 className="mt-2 text-[14px] font-medium text-white">{title}</h3>
 
       {description ? (
-        <p className="mt-3 max-w-md text-[14px] leading-relaxed text-zinc-500">
+        <p className="mt-1 max-w-md text-[12px] leading-relaxed text-fg-mute">
           {description}
         </p>
       ) : null}
 
       {action || secondaryAction ? (
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+        <div className="mt-4 flex flex-wrap items-center gap-2">
           {action}
           {secondaryAction}
         </div>
       ) : null}
-
-      <p className="mt-10 border-t border-zinc-200 pt-4 font-mono text-[10px] uppercase tracking-tag text-zinc-500">
-        indaba — a gathering where business is discussed
-      </p>
     </div>
   );
 }

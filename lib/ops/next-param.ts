@@ -15,7 +15,8 @@ const ALLOWED_FIRST_SEGMENTS = new Set([
   "intros",
   "events",
   "feed",
-  "zitf",
+  "compliance",
+  "agent",
   "settings",
 ]);
 

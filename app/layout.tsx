@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import "./globals.css";
-import "leaflet/dist/leaflet.css";
 
 // Root metadata is intentionally minimal. Each route group (marketing / ops /
 // auth) overrides title, description, and OpenGraph details in its own layout

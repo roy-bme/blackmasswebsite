@@ -12,20 +12,12 @@ type SelectProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, "children"> & {
   label?: string;
   hint?: string;
   error?: string;
-  /** Render-friendly options. If omitted, you can pass `children` instead. */
   options?: SelectOption[];
-  /** Pass-through children (custom `<option>` / `<optgroup>` markup). */
   children?: React.ReactNode;
-  /** Optional placeholder rendered as a disabled, empty-value first option. */
   placeholder?: string;
   containerClassName?: string;
 };
 
-/**
- * Native `<select>` styled to match the rest of the ops portal. Native is the
- * right call here — accessibility, keyboard, and mobile UX all come for free,
- * and the design system doesn't need a custom popover yet.
- */
 const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
   {
     label,
@@ -51,7 +43,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
       {label ? (
         <label
           htmlFor={fieldId}
-          className="font-mono text-[11px] uppercase tracking-tag text-zinc-500"
+          className="font-mono text-[10px] uppercase tracking-eyebrow text-fg-dim"
         >
           {label}
         </label>
@@ -59,10 +51,10 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
 
       <div
         className={cn(
-          "relative border border-zinc-200 bg-white transition-colors",
-          "focus-within:border-zimx-black",
-          error && "border-zimx-red focus-within:border-zimx-red",
-          disabled && "opacity-60 bg-zimx-offwhite",
+          "relative border border-line-15 bg-ink-700 transition-colors",
+          "focus-within:border-zimx-gold",
+          error && "border-status-bad focus-within:border-status-bad",
+          disabled && "opacity-60",
         )}
       >
         <select
@@ -72,7 +64,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
           aria-invalid={Boolean(error) || undefined}
           aria-describedby={errorId ?? hintId}
           className={cn(
-            "w-full appearance-none bg-transparent px-3 py-2.5 pr-9 text-[14px] text-zimx-black",
+            "w-full appearance-none bg-transparent px-3 py-2.5 pr-9 text-[14px] text-white",
             "outline-none focus:outline-none",
             className,
           )}
@@ -91,9 +83,8 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
               ))
             : children}
         </select>
-        {/* Caret — flat, monochrome to match the ink-on-paper aesthetic. */}
         <svg
-          className="pointer-events-none absolute right-3 top-1/2 h-3 w-3 -translate-y-1/2 text-zinc-500"
+          className="pointer-events-none absolute right-3 top-1/2 h-3 w-3 -translate-y-1/2 text-fg-dim"
           viewBox="0 0 12 12"
           fill="none"
           aria-hidden="true"
@@ -110,12 +101,12 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select(
       {error ? (
         <p
           id={errorId}
-          className="font-mono text-[11px] uppercase tracking-tag text-zimx-red"
+          className="font-mono text-[10px] uppercase tracking-eyebrow text-status-bad"
         >
           {error}
         </p>
       ) : hint ? (
-        <p id={hintId} className="text-[12px] text-zinc-500">
+        <p id={hintId} className="text-[11px] text-fg-mute">
           {hint}
         </p>
       ) : null}

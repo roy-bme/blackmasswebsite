@@ -15,7 +15,6 @@ export default function AuthLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Auth pages render on the same dark surface but without portal chrome;
-  // Phase 2 will flesh this out with the login form and callback handler.
-  return <div className="min-h-screen">{children}</div>;
+  // Auth surfaces own their full-bleed layout — no portal chrome.
+  return <>{children}</>;
 }

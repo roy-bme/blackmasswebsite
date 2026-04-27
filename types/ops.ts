@@ -1,7 +1,7 @@
 /**
  * TypeScript types for the indaba ops portal database schema.
  *
- * These mirror the 12 Supabase tables that back the portal:
+ * Mirrors the public.* tables that back the portal:
  *   1.  users
  *   2.  zones
  *   3.  businesses
@@ -15,14 +15,14 @@
  *   11. tasks
  *   12. competitive_intel
  *
- * Phase 2 owns the SQL migrations themselves; this file is the canonical
- * client-side shape used by server components, route handlers, and the UI
- * primitives. Each row type matches the column names exactly (snake_case)
- * so it can be passed straight from `supabase.from(...).select()` results
- * with no manual mapping.
- *
- * Insert / Update variants are derived from the row type with `_id`,
- * timestamps, and server-defaults made optional.
+ * Plus the v1 additions for Compliance Queue, Agent Console, and Discovery:
+ *   13. compliance_flags
+ *   14. regulatory_signals
+ *   15. agent_runs
+ *   16. agent_briefs
+ *   17. agent_suggestions
+ *   18. discovery_candidates
+ *   19. pipeline_signals
  */
 
 import type { SectorKey } from "@/lib/ops/sector-colors";
@@ -32,17 +32,12 @@ import type { SectorKey } from "@/lib/ops/sector-colors";
 export type Uuid = string;
 export type IsoDateTime = string;
 export type IsoDate = string;
-
-/** Postgres `numeric` — serialised as `number` over PostgREST in practice. */
 export type Numeric = number;
-
-/** Constrained 1–5 integer used by `zimx_fit_score`, `threat_level`, etc. */
 export type Rating1to5 = 1 | 2 | 3 | 4 | 5;
 
 // ─── enums ───────────────────────────────────────────────────────────────────
 
 export type UserRole = "admin" | "ops" | "bd" | "compliance";
-
 export type BusinessType = "formal" | "informal";
 
 export type BusinessStage =
@@ -63,7 +58,14 @@ export type IntroStatus =
   | "meeting_done"
   | "dormant";
 
-export type ActivityChannel = "ground_ops" | "bd_networking" | "admin";
+export type FeedChannel =
+  | "admin"
+  | "ground_ops"
+  | "bd_networking"
+  | "compliance";
+
+/** Legacy alias — older callers still import ActivityChannel. */
+export type ActivityChannel = FeedChannel;
 
 export type ActivityType =
   | "daily_report"
@@ -74,6 +76,22 @@ export type ActivityType =
   | "status_update";
 
 export type TaskStatus = "open" | "in_progress" | "done" | "cancelled";
+
+export type ComplianceSeverity = "info" | "warning" | "blocker";
+export type ComplianceFlagStatus =
+  | "open"
+  | "in_review"
+  | "resolved"
+  | "escalated";
+export type ComplianceSource = "rule" | "agent" | "manual";
+export type RegulatorySeverity = "low" | "med" | "high";
+export type AgentRunStatus = "queued" | "running" | "ok" | "warn" | "error";
+export type AgentSuggestionStatus =
+  | "open"
+  | "accepted"
+  | "skipped"
+  | "expired";
+export type DiscoveryStatus = "open" | "promoted" | "dismissed";
 
 // ─── 1. users ────────────────────────────────────────────────────────────────
 
@@ -244,11 +262,10 @@ export type EventDebrief = {
 export type Activity = {
   id: Uuid;
   user_id: Uuid;
-  channel: ActivityChannel;
+  channel: FeedChannel;
   type: ActivityType;
   content: string;
   attachments: string[] | null;
-  /** Self-referential — replies/threading point at the parent activity. */
   parent_id: Uuid | null;
   linked_business_id: Uuid | null;
   linked_intro_id: Uuid | null;
@@ -289,12 +306,105 @@ export type CompetitiveIntel = {
   created_at: IsoDateTime;
 };
 
+// ─── 13. compliance_flags ────────────────────────────────────────────────────
+
+export type ComplianceFlag = {
+  id: Uuid;
+  severity: ComplianceSeverity;
+  source: ComplianceSource;
+  business_id: Uuid | null;
+  link_id: Uuid | null;
+  summary: string;
+  detail: string | null;
+  status: ComplianceFlagStatus;
+  notes: string | null;
+  created_at: IsoDateTime;
+  resolved_at: IsoDateTime | null;
+  resolved_by: Uuid | null;
+  assigned_to: Uuid | null;
+};
+
+// ─── 14. regulatory_signals ──────────────────────────────────────────────────
+
+export type RegulatorySignal = {
+  id: Uuid;
+  jurisdiction: string;
+  source: string;
+  headline: string;
+  body: string | null;
+  severity: RegulatorySeverity;
+  exposure: Record<string, unknown>;
+  external_url: string | null;
+  created_at: IsoDateTime;
+};
+
+// ─── 15. agent_runs ──────────────────────────────────────────────────────────
+
+export type AgentRun = {
+  id: Uuid;
+  agent_name: string;
+  status: AgentRunStatus;
+  started_at: IsoDateTime;
+  ended_at: IsoDateTime | null;
+  duration_ms: number | null;
+  outputs: Record<string, unknown>;
+  trace_url: string | null;
+  notes: string | null;
+};
+
+// ─── 16. agent_briefs ────────────────────────────────────────────────────────
+
+export type AgentBrief = {
+  id: Uuid;
+  run_id: Uuid | null;
+  audience: "admin" | "compliance";
+  markdown: string;
+  created_at: IsoDateTime;
+};
+
+// ─── 17. agent_suggestions ───────────────────────────────────────────────────
+
+export type AgentSuggestion = {
+  id: Uuid;
+  run_id: Uuid | null;
+  kind: string;
+  target_id: Uuid | null;
+  payload: Record<string, unknown>;
+  status: AgentSuggestionStatus;
+  created_at: IsoDateTime;
+  accepted_at: IsoDateTime | null;
+  accepted_by: Uuid | null;
+};
+
+// ─── 18. discovery_candidates ────────────────────────────────────────────────
+
+export type DiscoveryCandidate = {
+  id: Uuid;
+  name: string;
+  sector: string | null;
+  confidence: Numeric | null;
+  source: string;
+  payload: Record<string, unknown>;
+  status: DiscoveryStatus;
+  promoted_to: Uuid | null;
+  promoted_at: IsoDateTime | null;
+  promoted_by: Uuid | null;
+  created_at: IsoDateTime;
+};
+
+// ─── 19. pipeline_signals ────────────────────────────────────────────────────
+
+export type PipelineSignal = {
+  id: Uuid;
+  candidate_id: Uuid;
+  kind: string;
+  evidence: string | null;
+  payload: Record<string, unknown>;
+  created_at: IsoDateTime;
+};
+
 // ─── insert / update helpers ─────────────────────────────────────────────────
 
-/**
- * Columns that are populated by Postgres (defaults / triggers) and therefore
- * always optional on insert.
- */
 type ServerManaged = "id" | "created_at" | "updated_at";
 
 export type Insert<T> = Omit<T, ServerManaged> &
@@ -302,8 +412,6 @@ export type Insert<T> = Omit<T, ServerManaged> &
 
 export type Update_<T> = Partial<Omit<T, ServerManaged>>;
 
-// Per-table insert / update aliases so call sites read cleanly:
-//   const row: BusinessInsert = { ... }
 export type UserInsert = Insert<User>;
 export type UserUpdate = Update_<User>;
 export type ZoneInsert = Insert<Zone>;
@@ -328,12 +436,11 @@ export type TaskInsert = Insert<Task>;
 export type TaskUpdate = Update_<Task>;
 export type CompetitiveIntelInsert = Insert<CompetitiveIntel>;
 export type CompetitiveIntelUpdate = Update_<CompetitiveIntel>;
+export type ComplianceFlagInsert = Insert<ComplianceFlag>;
+export type ComplianceFlagUpdate = Update_<ComplianceFlag>;
+export type DiscoveryCandidateInsert = Insert<DiscoveryCandidate>;
+export type DiscoveryCandidateUpdate = Update_<DiscoveryCandidate>;
 
-/**
- * Lightweight registry of every table name. Useful for typed wrappers like
- * `supabase.from(OPS_TABLES.businesses)` so the literal can't drift from the
- * row-type catalog above.
- */
 export const OPS_TABLES = {
   users: "users",
   zones: "zones",
@@ -347,6 +454,13 @@ export const OPS_TABLES = {
   activities: "activities",
   tasks: "tasks",
   competitive_intel: "competitive_intel",
+  compliance_flags: "compliance_flags",
+  regulatory_signals: "regulatory_signals",
+  agent_runs: "agent_runs",
+  agent_briefs: "agent_briefs",
+  agent_suggestions: "agent_suggestions",
+  discovery_candidates: "discovery_candidates",
+  pipeline_signals: "pipeline_signals",
 } as const;
 
 export type OpsTableName = (typeof OPS_TABLES)[keyof typeof OPS_TABLES];

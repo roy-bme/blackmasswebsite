@@ -3,7 +3,43 @@
 @tailwind utilities;
 
 :root {
+  /* Ink palette — drives both legacy `--bg` and new ops portal surfaces. */
   --bg: #1f2228;
+  --ink-900: #14161a;
+  --ink-800: #1a1d22;
+  --ink-700: #1f2228;
+  --ink-600: #262a31;
+  --ink-500: #2f343c;
+  --ink-400: #3a3f48;
+  --ink-300: #4a4f59;
+
+  --line-10: rgba(255, 255, 255, 0.08);
+  --line-15: rgba(255, 255, 255, 0.12);
+  --line-20: rgba(255, 255, 255, 0.18);
+  --line-30: rgba(255, 255, 255, 0.28);
+
+  --fg: #ffffff;
+  --fg-mute: rgba(255, 255, 255, 0.62);
+  --fg-dim: rgba(255, 255, 255, 0.42);
+  --fg-faint: rgba(255, 255, 255, 0.24);
+
+  --gold: #d4af37;
+  --gold-muted: #b19631;
+  --gold-glow: rgba(212, 175, 55, 0.18);
+
+  --sec-mining: #ba7517;
+  --sec-manufacturing: #e24b4a;
+  --sec-retail: #378add;
+  --sec-services: #7f77dd;
+  --sec-agriculture: #1d9e75;
+  --sec-fuel: #d4537e;
+  --sec-fmcg: #1d9e75;
+  --sec-wholesale: #378add;
+
+  --ok: #4ec38a;
+  --warn: #e6a83c;
+  --bad: #e2614b;
+  --info: #5aa8e6;
 }
 
 html,
@@ -24,36 +60,143 @@ html {
   color: #ffffff;
 }
 
-/* Focus ring — accessibility only */
+/* Default focus ring — gold for the indaba portal, neutral elsewhere. */
 :focus-visible {
-  outline: 2px solid rgba(59, 130, 246, 0.5);
-  outline-offset: 2px;
+  outline: 1px solid var(--gold);
+  outline-offset: 1px;
 }
 
-/* Remove default button focus to use our ring */
 button:focus,
 a:focus {
   outline: none;
 }
 
-/* Preserve focus-visible ring */
 button:focus-visible,
 a:focus-visible {
-  outline: 2px solid rgba(59, 130, 246, 0.5);
-  outline-offset: 2px;
+  outline: 1px solid var(--gold);
+  outline-offset: 1px;
 }
 
 /* Constrain Leaflet's control layers so portal'd dialogs (z-index: 1000+)
-   always render above map controls. By default Leaflet puts its control
-   container at z-index 1000, which ties with our dialog and can cause the
-   controls to render on top of the dialog content in some browsers. */
+   always render above map controls. */
 .leaflet-top,
 .leaflet-bottom {
   z-index: 600 !important;
 }
 
-/* Pin-drop mode: override Leaflet's default grab cursor so ops users get a
-   crosshair over the tile canvas when dropping a pin for a new business. */
+/* Pin-drop mode: crosshair cursor over the Leaflet tile canvas. */
 .indaba-pin-drop-cursor .leaflet-container {
   cursor: crosshair;
+}
+
+/* ------------------------------------------------------------------------
+ * Indaba portal utilities
+ * ------------------------------------------------------------------------ */
+
+.indaba-mono {
+  font-family: var(--font-geist-mono), ui-monospace, "SFMono-Regular", Menlo,
+    monospace;
+  letter-spacing: 0.02em;
+}
+
+.indaba-eyebrow {
+  font-family: var(--font-geist-mono), ui-monospace, "SFMono-Regular", Menlo,
+    monospace;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-dim);
+}
+
+.indaba-eyebrow-gold {
+  color: var(--gold);
+}
+
+.indaba-thin-scroll::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+.indaba-thin-scroll::-webkit-scrollbar-thumb {
+  background: var(--line-15);
+}
+.indaba-thin-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@keyframes indaba-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.indaba-skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+  background-size: 200% 100%;
+  animation: indaba-shimmer 1.6s linear infinite;
+}
+
+.indaba-placeholder-photo {
+  background-image: repeating-linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.05) 0 6px,
+    rgba(255, 255, 255, 0.09) 6px 12px
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg-dim);
+  font-family: var(--font-geist-mono), ui-monospace, "SFMono-Regular", Menlo,
+    monospace;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* Bulawayo-ish map placeholder — a striped grid + soft sector glow. Used as
+ * a backdrop on the auth screen and on map-loading states. */
+.indaba-map-placeholder {
+  background:
+    radial-gradient(circle at 30% 40%, rgba(78, 195, 138, 0.06) 0%, transparent 40%),
+    radial-gradient(circle at 70% 60%, rgba(212, 175, 55, 0.05) 0%, transparent 40%),
+    linear-gradient(0deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    #181a1f;
+  background-size: 100% 100%, 100% 100%, 56px 56px, 56px 56px;
+  position: relative;
+}
+.indaba-map-placeholder::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      115deg,
+      transparent 48%,
+      rgba(255, 255, 255, 0.07) 48%,
+      rgba(255, 255, 255, 0.07) 49%,
+      transparent 49%
+    ),
+    linear-gradient(
+      35deg,
+      transparent 22%,
+      rgba(255, 255, 255, 0.05) 22%,
+      rgba(255, 255, 255, 0.05) 23%,
+      transparent 23%
+    ),
+    linear-gradient(
+      75deg,
+      transparent 70%,
+      rgba(255, 255, 255, 0.06) 70%,
+      rgba(255, 255, 255, 0.06) 71%,
+      transparent 71%
+    );
+  pointer-events: none;
 }

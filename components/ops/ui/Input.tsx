@@ -8,14 +8,13 @@ type InputProps = InputHTMLAttributes<HTMLInputElement> & {
   error?: string;
   leadingIcon?: ReactNode;
   trailingIcon?: ReactNode;
-  /** Wrapper class for the label/input/hint stack. */
   containerClassName?: string;
 };
 
 /**
- * Text input with optional label, hint, and inline error message. The visual
- * style matches the rest of the ops portal — flat, square corners, ink-on-paper
- * with a zimx-red error state.
+ * Text input with optional label, hint, and inline error message. Dark
+ * surface, hairline border, gold focus ring — matches the rest of the
+ * indaba portal.
  */
 const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   {
@@ -41,7 +40,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       {label ? (
         <label
           htmlFor={inputId}
-          className="font-mono text-[11px] uppercase tracking-tag text-zinc-500"
+          className="font-mono text-[10px] uppercase tracking-eyebrow text-fg-dim"
         >
           {label}
         </label>
@@ -49,14 +48,14 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
 
       <div
         className={cn(
-          "relative flex items-center border border-zinc-200 bg-white transition-colors",
-          "focus-within:border-zimx-black",
-          error && "border-zimx-red focus-within:border-zimx-red",
-          disabled && "opacity-60 bg-zimx-offwhite",
+          "relative flex items-center border border-line-15 bg-ink-700 transition-colors",
+          "focus-within:border-zimx-gold",
+          error && "border-status-bad focus-within:border-status-bad",
+          disabled && "opacity-60",
         )}
       >
         {leadingIcon ? (
-          <span className="pl-3 text-zinc-500 inline-flex">{leadingIcon}</span>
+          <span className="pl-3 text-fg-dim inline-flex">{leadingIcon}</span>
         ) : null}
         <input
           ref={ref}
@@ -65,7 +64,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           aria-invalid={Boolean(error) || undefined}
           aria-describedby={errorId ?? hintId}
           className={cn(
-            "w-full bg-transparent px-3 py-2.5 text-[14px] text-zimx-black placeholder:text-zinc-500",
+            "w-full bg-transparent px-3 py-2.5 text-[14px] text-white placeholder:text-fg-faint",
             "outline-none focus:outline-none",
             leadingIcon && "pl-2",
             trailingIcon && "pr-2",
@@ -74,19 +73,19 @@ const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           {...rest}
         />
         {trailingIcon ? (
-          <span className="pr-3 text-zinc-500 inline-flex">{trailingIcon}</span>
+          <span className="pr-3 text-fg-dim inline-flex">{trailingIcon}</span>
         ) : null}
       </div>
 
       {error ? (
         <p
           id={errorId}
-          className="font-mono text-[11px] uppercase tracking-tag text-zimx-red"
+          className="font-mono text-[10px] uppercase tracking-eyebrow text-status-bad"
         >
           {error}
         </p>
       ) : hint ? (
-        <p id={hintId} className="text-[12px] text-zinc-500">
+        <p id={hintId} className="text-[11px] text-fg-mute">
           {hint}
         </p>
       ) : null}

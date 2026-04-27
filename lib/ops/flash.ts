@@ -9,12 +9,12 @@
 export const FLASH_MESSAGES = {
   saved: "Saved.",
   no_access: "You don't have access to that module.",
-  no_zitf_access: "You don't have access to ZITF.",
-  no_paper_write: "Only ops and admin can key in paper responses.",
-  paper_saved: "Paper response saved.",
   deleted: "Deleted.",
   forbidden: "That action is not permitted.",
   unknown_error: "Something went wrong. Try again.",
+  promoted: "Suggestion promoted to Identified.",
+  approved: "Intro approved.",
+  flag_resolved: "Compliance flag resolved.",
 } as const;
 
 export type FlashKey = keyof typeof FLASH_MESSAGES;

@@ -14,6 +14,7 @@ const ALLOWED_CHANNELS: ActivityChannel[] = [
   "ground_ops",
   "bd_networking",
   "admin",
+  "compliance",
 ];
 
 const ALLOWED_TYPES: ActivityType[] = [

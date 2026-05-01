@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import AddBusinessDialog from "@/components/ops/Map/AddBusinessDialog";
@@ -14,6 +14,7 @@ import Pill from "@/components/ops/ui/Pill";
 import SectorChip from "@/components/ops/ui/SectorChip";
 import Textarea from "@/components/ops/ui/Textarea";
 import { opsApiPost } from "@/lib/ops/api-client";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { PRIMARY_SECTORS, getSectorHex } from "@/lib/ops/sector-colors";
 import type { BusinessStage, DiscoveryCandidate, UserRole } from "@/types/ops";
 
@@ -35,23 +36,46 @@ type BizLite = {
   zone_id: string | null; est_monthly_volume: number | null; notes: string | null; mapped_by: string | null; created_at: string;
 };
 
-export default function DirectoryClient({ businesses: initialBusinesses, suggested, zones, users, role }: { businesses: BizLite[]; suggested: DiscoveryCandidate[]; zones: Array<{id:string;name:string;centre_lat:number|null;centre_lng:number|null}>; users: Array<{id:string;name:string}>; role: UserRole; }) {
+export default function DirectoryClient({ suggested, zones, users, role }: { suggested: DiscoveryCandidate[]; zones: Array<{id:string;name:string;centre_lat:number|null;centre_lng:number|null}>; users: Array<{id:string;name:string}>; role: UserRole; }) {
   const router = useRouter();
-  const [businesses, setBusinesses] = useState(initialBusinesses);
+  const [businesses, setBusinesses] = useState<BizLite[]>([]);
+  const [sectorFilter, setSectorFilter] = useState<string | null>(null);
+  const [zoneFilter, setZoneFilter] = useState<string | null>(null);
+  const [launch6Only, setLaunch6Only] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [selected, setSelected] = useState<BizLite | null>(null);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ name: "", sector: "", notes: "", est_monthly_volume: "" });
 
+
+  useEffect(() => {
+    const supabase = createSupabaseBrowserClient();
+    async function loadBusinesses() {
+      const { data } = await supabase
+        .from("businesses")
+        .select("id, name, sector, onboarding_stage, launch_6, address, zone_id, est_monthly_volume, notes, mapped_by, created_at")
+        .order("name");
+      setBusinesses((data ?? []) as BizLite[]);
+    }
+    void loadBusinesses();
+  }, []);
+
+  const filteredBusinesses = useMemo(() => businesses
+    .filter((b) => !sectorFilter || b.sector === sectorFilter)
+    .filter((b) => !zoneFilter || b.zone_id === zoneFilter)
+    .filter((b) => !launch6Only || b.launch_6 === true), [businesses, sectorFilter, zoneFilter, launch6Only]);
+
+  const distinctSectors = useMemo(() => Array.from(new Set(businesses.map((b) => b.sector).filter(Boolean))).sort(), [businesses]);
+
   const byLane = useMemo(() => {
     const map = new Map<string, BizLite[]>();
-    for (const b of businesses) {
+    for (const b of filteredBusinesses) {
       const arr = map.get(b.onboarding_stage) ?? [];
       arr.push(b);
       map.set(b.onboarding_stage, arr);
     }
     return map;
-  }, [businesses]);
+  }, [filteredBusinesses]);
 
   const onboarded = byLane.get("onboarded")?.length ?? 0;
 
@@ -93,9 +117,14 @@ export default function DirectoryClient({ businesses: initialBusinesses, suggest
   }
 
   return (<div>
-    <PageHeader eyebrow="indaba · directory · pipeline" title={`${businesses.length} businesses`} caption={`+ ${suggested.length} suggested · ${onboarded} onboarded`} actions={<>
-      {PRIMARY_SECTORS.slice(0, 4).map((s) => <SectorChip key={s} sector={s} />)}
-      <Button variant="ghost" size="sm">Launch 6</Button>
+    <PageHeader eyebrow="indaba · directory · pipeline" title={`${filteredBusinesses.length} businesses`} caption={`Showing ${filteredBusinesses.length} businesses · + ${suggested.length} suggested · ${onboarded} onboarded`} actions={<>
+      {distinctSectors.map((s) => <SectorChip key={s} sector={s} active={sectorFilter === s} onClick={() => setSectorFilter((prev) => prev === s ? null : s)} />)}
+      <select className="rounded-md border border-line-15 bg-ink-800 px-2 py-1 text-xs text-white" value={zoneFilter ?? ""} onChange={(e) => setZoneFilter(e.target.value || null)}>
+        <option value="">All zones</option>
+        {zones.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
+      </select>
+      <Button variant={launch6Only ? "primary" : "ghost"} size="sm" onClick={() => setLaunch6Only((prev) => !prev)}>Launch 6</Button>
+      <button className="text-xs text-fg-mute underline" onClick={() => { setSectorFilter(null); setZoneFilter(null); setLaunch6Only(false); }}>Clear filters</button>
       <Button variant="primary" size="sm" onClick={() => setShowAddDialog(true)}>+ Add</Button>
     </>} />
 

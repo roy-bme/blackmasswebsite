@@ -1,9 +1,9 @@
 import Avatar from "@/components/ops/ui/Avatar";
 import Card from "@/components/ops/ui/Card";
 import EmptyState from "@/components/ops/ui/EmptyState";
-import Eyebrow from "@/components/ops/ui/Eyebrow";
 import Pill from "@/components/ops/ui/Pill";
 import PageHeader from "@/components/ops/PageHeader";
+import FeedComposer from "@/components/ops/Feed/FeedComposer";
 import { requireModuleAccess } from "@/lib/ops/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type {
@@ -72,6 +72,8 @@ export default async function FeedPage() {
       />
 
       <div className="space-y-2 px-4 py-4 md:px-6 md:py-5">
+        <FeedComposer channel={myChannel} variant="inline" />
+
         {acts.length === 0 ? (
           <EmptyState
             title="No posts yet."
@@ -117,18 +119,7 @@ export default async function FeedPage() {
         })}
       </div>
 
-      {/* Sticky composer (mobile only) */}
-      <div
-        className="md:hidden fixed inset-x-0 bottom-[60px] z-20 flex items-center gap-2 border-t border-line-15 bg-ink-700/95 px-3 py-2.5 backdrop-blur"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 0.5rem)" }}
-      >
-        <Pill tone="gold" size="sm">
-          {myChannel}
-        </Pill>
-        <div className="flex-1 border border-line-15 bg-ink-700 px-3 py-2 text-[13px] text-fg-dim">
-          Post to feed…
-        </div>
-      </div>
+      <FeedComposer channel={myChannel} variant="sticky" />
     </div>
   );
 }

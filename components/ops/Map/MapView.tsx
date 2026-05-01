@@ -11,6 +11,7 @@ import SectorDot from "@/components/ops/ui/SectorDot";
 import Input from "@/components/ops/ui/Input";
 import Textarea from "@/components/ops/ui/Textarea";
 import Button from "@/components/ops/ui/Button";
+import { useToast } from "@/components/ui/Toast";
 import { opsApiPost } from "@/lib/ops/api-client";
 import type { UserRole } from "@/types/ops";
 
@@ -50,6 +51,7 @@ export default function MapView({
   role,
   currentUserId,
 }: MapViewProps) {
+  const toast = useToast();
   const [items, setItems] = useState(businesses);
   const [filter, setFilter] = useState<MapFilter>("all");
   const [pinDropMode, setPinDropMode] = useState(false);
@@ -59,7 +61,7 @@ export default function MapView({
     { lat: number; lng: number } | null
   >(null);
   const [lastSector, setLastSector] = useState<string>("");
-  const [toast, setToast] = useState<string | null>(null);
+  const [hint, setHint] = useState<string | null>(null);
   const [selected, setSelected] = useState<MapBusiness | null>(null);
   const [movingPinId, setMovingPinId] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
@@ -70,17 +72,29 @@ export default function MapView({
     (coords: { lat: number; lng: number }) => {
       if (!pinDropMode) return;
       if (movingPinId) {
-        void opsApiPost("/api/ops/businesses/update", { id: movingPinId, patch: { lat: coords.lat, lng: coords.lng } });
-        setItems((prev) => prev.map((b) => b.id === movingPinId ? { ...b, lat: coords.lat, lng: coords.lng } : b));
-        setToast("Pin moved.");
+        const targetId = movingPinId;
+        const previous = items.find((b) => b.id === targetId);
+        setItems((prev) => prev.map((b) => b.id === targetId ? { ...b, lat: coords.lat, lng: coords.lng } : b));
         setMovingPinId(null);
+        void (async () => {
+          const res = await opsApiPost("/api/ops/businesses/update", { id: targetId, patch: { lat: coords.lat, lng: coords.lng } });
+          if (!res.ok) {
+            if (previous) {
+              setItems((prev) => prev.map((b) => b.id === targetId ? { ...b, lat: previous.lat, lng: previous.lng } : b));
+            }
+            toast.error("Could not move pin. Reverted.");
+            return;
+          }
+          setHint("Pin moved.");
+          window.setTimeout(() => setHint(null), 2200);
+        })();
         return;
       } else {
         setPendingCoords(coords);
         setDialogOpen(true);
       }
     },
-    [pinDropMode, movingPinId],
+    [pinDropMode, movingPinId, items, toast],
   );
 
   const exitPinDrop = useCallback(() => {
@@ -104,8 +118,8 @@ export default function MapView({
       setDialogOpen(false);
       setPendingCoords(null);
       if (quickAddMode) {
-        setToast("Pinned. Tap map for next.");
-        window.setTimeout(() => setToast(null), 2200);
+        setHint("Pinned. Tap map for next.");
+        window.setTimeout(() => setHint(null), 2200);
       } else {
         setPinDropMode(false);
       }
@@ -160,8 +174,21 @@ export default function MapView({
             movingPinId={movingPinId}
             onMapClick={handleMapClick}
             onEditBusiness={openEdit}
-            onMoveBusiness={(id) => { setMovingPinId(id); setPinDropMode(true); setToast("Click on map to place pin."); }}
-            onDeleteBusiness={(id) => { if (!canDeleteRecords) return; void opsApiPost("/api/ops/businesses/update", { id, patch: { active: false } }); setItems((p) => p.filter((b) => b.id !== id)); }}
+            onMoveBusiness={(id) => { setMovingPinId(id); setPinDropMode(true); setHint("Click on map to place pin."); }}
+            onDeleteBusiness={(id) => {
+              if (!canDeleteRecords) return;
+              const prevList = items;
+              setItems((p) => p.filter((b) => b.id !== id));
+              void (async () => {
+                const res = await opsApiPost("/api/ops/businesses/update", { id, patch: { active: false } });
+                if (!res.ok) {
+                  setItems(prevList);
+                  toast.error("Could not delete business. Restored.");
+                  return;
+                }
+                toast.success("Business deleted.");
+              })();
+            }}
             onLogInteraction={(id) => setInteractionBusinessId(id)}
           />
           {canAddRecords ? (
@@ -175,13 +202,13 @@ export default function MapView({
               onToggleQuickAdd={toggleQuickAdd}
             />
           ) : null}
-          {toast ? (
+          {hint ? (
             <div
               role="status"
               aria-live="polite"
               className="pointer-events-none absolute bottom-4 left-1/2 z-[600] -translate-x-1/2 border border-zimx-gold bg-ink-900/95 px-3 py-1.5 font-mono text-[11px] uppercase tracking-eyebrow text-zimx-gold shadow-lg"
             >
-              {toast}
+              {hint}
             </div>
           ) : null}
         </div>
@@ -262,8 +289,9 @@ export default function MapView({
             if (!selected) return;
             const patch = { name: form.name.trim(), sector: form.sector as MapBusiness["sector"], notes: form.notes?.trim() || null, est_monthly_volume: form.est_monthly_volume ? Number(form.est_monthly_volume) : null, zone_id: form.zone_id || null, decision_maker_name: form.decision_maker_name?.trim() || null, decision_maker_title: form.decision_maker_title?.trim() || null, phone: form.phone?.trim() || null, email: form.email?.trim() || null, linkedin: form.linkedin?.trim() || null, key_suppliers: (form.key_suppliers || "").split(",").map((s) => s.trim()).filter(Boolean), key_customers: (form.key_customers || "").split(",").map((s) => s.trim()).filter(Boolean), pain_points: (form.pain_points || "").split(",").map((s) => s.trim()).filter(Boolean), zimx_fit_score: form.zimx_fit_score ? Number(form.zimx_fit_score) : null };
             const res = await opsApiPost("/api/ops/businesses/update", { id: selected.id, patch });
-            if (!res.ok) { alert("Save failed."); return; }
+            if (!res.ok) { toast.error("Could not save changes. Try again."); return; }
             setItems((prev) => prev.map((b) => (b.id === selected.id ? { ...b, ...patch } : b)));
+            toast.success("Business updated.");
             setSelected(null);
           }}>Save</Button><Button size="sm" variant="ghost" onClick={() => setSelected(null)}>Cancel</Button></div> : null}
         </div>

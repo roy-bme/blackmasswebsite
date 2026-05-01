@@ -1,9 +1,9 @@
 import Card from "@/components/ops/ui/Card";
-import Button from "@/components/ops/ui/Button";
 import EmptyState from "@/components/ops/ui/EmptyState";
 import Eyebrow from "@/components/ops/ui/Eyebrow";
 import Pill from "@/components/ops/ui/Pill";
 import PageHeader from "@/components/ops/PageHeader";
+import SuggestionsList from "@/components/ops/Agent/SuggestionsList";
 import { requireModuleAccess } from "@/lib/ops/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type {
@@ -117,37 +117,8 @@ export default async function AgentConsolePage() {
           {!isCompliance ? (
             <Card padding="lg">
               <Eyebrow>suggested actions · {suggestions.length}</Eyebrow>
-              <div className="mt-3 divide-y divide-line-10">
-                {suggestions.length === 0 ? (
-                  <EmptyState
-                    title="No open suggestions."
-                    description="The agent will surface actionable items here."
-                  />
-                ) : (
-                  suggestions.map((s) => (
-                    <div
-                      key={s.id}
-                      className="flex items-center justify-between gap-3 py-3"
-                    >
-                      <div>
-                        <div className="text-[13px] font-medium text-white">
-                          {(s.payload?.title as string) ?? s.kind}
-                        </div>
-                        <div className="mt-1 font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
-                          {(s.payload?.subtitle as string) ?? s.kind}
-                        </div>
-                      </div>
-                      <div className="flex gap-1.5">
-                        <Button variant="primary" size="sm">
-                          Accept
-                        </Button>
-                        <Button variant="bare" size="sm">
-                          Skip
-                        </Button>
-                      </div>
-                    </div>
-                  ))
-                )}
+              <div className="mt-3">
+                <SuggestionsList suggestions={suggestions} />
               </div>
             </Card>
           ) : null}

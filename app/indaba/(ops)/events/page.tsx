@@ -1,8 +1,8 @@
 import Card from "@/components/ops/ui/Card";
-import Button from "@/components/ops/ui/Button";
 import EmptyState from "@/components/ops/ui/EmptyState";
 import Pill from "@/components/ops/ui/Pill";
 import PageHeader from "@/components/ops/PageHeader";
+import LogEventButton from "@/components/ops/Events/LogEventButton";
 import { requireModuleAccess } from "@/lib/ops/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { Event as OpsEvent } from "@/types/ops";
@@ -39,9 +39,7 @@ export default async function EventsPage() {
           <>
             <Pill tone="gold">Upcoming · {upcoming.length}</Pill>
             <Pill>Past · {past.length}</Pill>
-            <Button variant="primary" size="sm">
-              + Log event
-            </Button>
+            <LogEventButton />
           </>
         }
       />

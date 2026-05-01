@@ -1,5 +1,6 @@
+import Link from "next/link";
+
 import Card from "@/components/ops/ui/Card";
-import Button from "@/components/ops/ui/Button";
 import EmptyState from "@/components/ops/ui/EmptyState";
 import Eyebrow from "@/components/ops/ui/Eyebrow";
 import Pill from "@/components/ops/ui/Pill";
@@ -141,9 +142,18 @@ export default async function ComplianceQueuePage({
                   <span className="font-mono text-[10px] uppercase tracking-eyebrow text-fg-dim">
                     src · {f.source}
                   </span>
-                  <Button variant="ghost" size="sm">
+                  <Link
+                    href={
+                      f.business_id
+                        ? `/indaba/directory?id=${f.business_id}`
+                        : f.link_id
+                          ? `/indaba/intros?id=${f.link_id}`
+                          : "/indaba/directory"
+                    }
+                    className="border border-line-15 px-2.5 py-1 font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute hover:border-zimx-gold hover:text-white"
+                  >
                     Review
-                  </Button>
+                  </Link>
                 </div>
               </Card>
             ))

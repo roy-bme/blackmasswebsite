@@ -15,6 +15,7 @@ import SectorChip from "@/components/ops/ui/SectorChip";
 import Textarea from "@/components/ops/ui/Textarea";
 import InteractionsList from "@/components/ops/Interactions/InteractionsList";
 import LogInteractionModal from "@/components/ops/Interactions/LogInteractionModal";
+import { useToast } from "@/components/ui/Toast";
 import { opsApiPost } from "@/lib/ops/api-client";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getSectorHex } from "@/lib/ops/sector-colors";
@@ -42,6 +43,7 @@ type BizLite = {
 
 export default function DirectoryClient({ suggested, zones, users, role }: { suggested: DiscoveryCandidate[]; zones: Array<{id:string;name:string;centre_lat:number|null;centre_lng:number|null}>; users: Array<{id:string;name:string}>; role: UserRole; }) {
   const router = useRouter();
+  const toast = useToast();
   const [businesses, setBusinesses] = useState<BizLite[]>([]);
   const [zoneLookup, setZoneLookup] = useState<Record<string, string>>({});
   const [zoneOptions, setZoneOptions] = useState<Array<{ id: string; name: string }>>([]);
@@ -131,7 +133,7 @@ export default function DirectoryClient({ suggested, zones, users, role }: { sug
 
     if (!res.ok) {
       setBusinesses((prev) => prev.map((b) => (b.id === businessId ? { ...b, onboarding_stage: previousStage } : b)));
-      alert("Could not update stage. Try again.");
+      toast.error("Could not update stage. Try again.");
     }
   }
 
@@ -164,7 +166,7 @@ export default function DirectoryClient({ suggested, zones, users, role }: { sug
     const res = await opsApiPost("/api/ops/businesses/update", { id: b.id, patch: { onboarding_stage: next } });
     if (!res.ok) {
       setBusinesses((prev) => prev.map((item) => item.id === b.id ? { ...item, onboarding_stage: b.onboarding_stage } : item));
-      alert("Promote failed. Please retry.");
+      toast.error("Promote failed. Please retry.");
     }
   }
 
@@ -188,12 +190,13 @@ export default function DirectoryClient({ suggested, zones, users, role }: { sug
     };
     const res = await opsApiPost("/api/ops/businesses/update", { id: selected.id, patch });
     if (!res.ok) {
-      alert("Save failed.");
+      toast.error("Save failed. Try again.");
       return;
     }
     setBusinesses((prev) => prev.map((b) => b.id === selected.id ? { ...b, ...patch } as BizLite : b));
     setSelected((prev) => prev ? ({ ...prev, ...patch } as BizLite) : prev);
     setEditing(false);
+    toast.success("Saved.");
     router.refresh();
   }
 

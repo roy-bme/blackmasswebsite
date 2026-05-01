@@ -1,12 +1,15 @@
 /**
  * Zone geometry helpers.
  *
- * The `zones` table stores only centre points. For the four priority zones
- * we have hard-coded polygon bounding boxes; for the remaining zones we fall
- * back to a bounding box derived from the zone centre with a default radius.
+ * The `zones` table stores centre points and (for newer priority zones) a
+ * GeoJSON bounding-box polygon in `boundary_geojson`. For zones that pre-date
+ * `boundary_geojson` we keep hard-coded bounding boxes here, matching the
+ * polygons rendered on the map. Anything else falls back to a small box
+ * derived from the zone centre.
  *
  * Used by:
  *  - Map overlay polygons (BulawayoMap)
+ *  - Auto-assigning zone_id when a business pin is dropped (AddBusinessDialog)
  *  - Dashboard zone coverage (count businesses whose lat/lng falls inside)
  */
 
@@ -18,9 +21,10 @@ export type ZoneBounds = {
   maxLng: number;
 };
 
-// Bounding boxes for the four priority zones, matched on zone name.
-// These mirror the polygon coordinates rendered on the map.
+// Bounding boxes keyed by zone name. Covers the original 4 priority zones
+// plus the 7 ground-ops priority zones (3 existing + 4 newly added).
 const ZONE_BOUNDS_BY_NAME: Record<string, ZoneBounds> = {
+  // Original priority zones (polygons hard-coded in BulawayoMap).
   "CBD Core": { minLat: -20.158, maxLat: -20.144, minLng: 28.575, maxLng: 28.59 },
   "Belmont Industrial": {
     minLat: -20.18,
@@ -35,6 +39,50 @@ const ZONE_BOUNDS_BY_NAME: Record<string, ZoneBounds> = {
     maxLng: 28.558,
   },
   Kelvin: { minLat: -20.18, maxLat: -20.16, minLng: 28.528, maxLng: 28.55 },
+
+  // Ground-ops priority zones (added 2026-05-01).
+  "CBD / Sauce Town": {
+    minLat: -20.157,
+    maxLat: -20.11,
+    minLng: 28.575,
+    maxLng: 28.6,
+  },
+  Nkulumane: {
+    minLat: -20.195,
+    maxLat: -20.17,
+    minLng: 28.48,
+    maxLng: 28.515,
+  },
+  "Cowdray Park": {
+    minLat: -20.095,
+    maxLat: -20.065,
+    minLng: 28.49,
+    maxLng: 28.53,
+  },
+  Sizinda: {
+    minLat: -20.185,
+    maxLat: -20.16,
+    minLng: 28.528,
+    maxLng: 28.558,
+  },
+  Njube: {
+    minLat: -20.145,
+    maxLat: -20.12,
+    minLng: 28.51,
+    maxLng: 28.545,
+  },
+  Pumula: {
+    minLat: -20.155,
+    maxLat: -20.13,
+    minLng: 28.465,
+    maxLng: 28.495,
+  },
+  Nketa: {
+    minLat: -20.215,
+    maxLat: -20.19,
+    minLng: 28.515,
+    maxLng: 28.55,
+  },
 };
 
 // Half-width used to derive a bounding box from a zone centre when no

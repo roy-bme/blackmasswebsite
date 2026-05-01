@@ -10,6 +10,16 @@ export type MapBusiness = {
   est_monthly_volume: number | null;
   launch_6: boolean;
   notes: string | null;
+  decision_maker_name: string | null;
+  decision_maker_title: string | null;
+  phone: string | null;
+  email: string | null;
+  linkedin: string | null;
+  key_suppliers: string[] | null;
+  key_customers: string[] | null;
+  pain_points: string[] | null;
+  zimx_fit_score: number | null;
+  active: boolean;
 };
 
 export type MapLinkEndpoint = {

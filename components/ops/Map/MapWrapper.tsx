@@ -28,7 +28,11 @@ type MapWrapperProps = {
   filter: MapFilter;
   showIntros: boolean;
   pinDropMode?: boolean;
+  movingPinId?: string | null;
   onMapClick?: (coords: { lat: number; lng: number }) => void;
+  onEditBusiness?: (businessId: string) => void;
+  onMoveBusiness?: (businessId: string) => void;
+  onDeleteBusiness?: (businessId: string) => void;
 };
 
 export default function MapWrapper(props: MapWrapperProps) {

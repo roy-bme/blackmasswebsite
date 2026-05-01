@@ -23,7 +23,11 @@ type BulawayoMapProps = {
   filter: MapFilter;
   showIntros: boolean;
   pinDropMode?: boolean;
+  movingPinId?: string | null;
   onMapClick?: (coords: { lat: number; lng: number }) => void;
+  onEditBusiness?: (businessId: string) => void;
+  onMoveBusiness?: (businessId: string) => void;
+  onDeleteBusiness?: (businessId: string) => void;
 };
 
 type ZonePolygon = {
@@ -107,7 +111,11 @@ export default function BulawayoMap({
   filter,
   showIntros,
   pinDropMode = false,
+  movingPinId = null,
   onMapClick,
+  onEditBusiness,
+  onMoveBusiness,
+  onDeleteBusiness,
 }: BulawayoMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -220,19 +228,37 @@ export default function BulawayoMap({
             <div style="color:#666; font-size:12px; text-transform:capitalize; margin-top:2px;">${escapeHtml(b.sector)} · ${escapeHtml(zoneName)}</div>
             <div style="color:#1B1B1B; font-size:13px; margin-top:4px;">$${volume.toLocaleString()}/mo</div>
             ${notes ? `<div style="color:#555; font-size:12px; margin-top:4px;">${escapeHtml(notes)}</div>` : ""}
-            <a href="/indaba/directory?id=${encodeURIComponent(b.id)}" style="display:inline-block; margin-top:8px; font-size:12px; color:#00875A; text-decoration:none; font-weight:600;">View in directory →</a>
+            <div style="display:flex; gap:8px; margin-top:8px;">
+              <button type="button" data-action="edit" data-business-id="${escapeHtml(b.id)}" style="font-size:12px; color:#0B6BFF; background:none; border:0; padding:0; font-weight:600; cursor:pointer;">Edit</button>
+              <button type="button" data-action="move" data-business-id="${escapeHtml(b.id)}" style="font-size:12px; color:#A46A00; background:none; border:0; padding:0; font-weight:600; cursor:pointer;">Move Pin</button>
+              <button type="button" data-action="delete" data-business-id="${escapeHtml(b.id)}" style="font-size:12px; color:#B42318; background:none; border:0; padding:0; font-weight:600; cursor:pointer;">Delete</button>
+            </div>
           </div>
         `;
 
-        L.circleMarker([b.lat, b.lng], {
+        const marker = L.circleMarker([b.lat, b.lng], {
           radius,
           fillColor,
           fillOpacity: 0.85,
           color: strokeColor,
           weight: strokeWeight,
-        })
-          .bindPopup(popupHtml)
-          .addTo(layers.businesses);
+        });
+
+        marker.bindPopup(popupHtml).on("popupopen", (event) => {
+          const el = event.popup.getElement();
+          if (!el) return;
+          const buttons = el.querySelectorAll<HTMLButtonElement>("button[data-action]");
+          buttons.forEach((btn) => {
+            btn.onclick = () => {
+              const action = btn.dataset.action;
+              const businessId = btn.dataset.businessId;
+              if (!businessId) return;
+              if (action === "edit") onEditBusiness?.(businessId);
+              if (action === "move") onMoveBusiness?.(businessId);
+              if (action === "delete") onDeleteBusiness?.(businessId);
+            };
+          });
+        }).addTo(layers.businesses);
       }
     }
 
@@ -306,7 +332,7 @@ export default function BulawayoMap({
           .addTo(layers.introductions);
       }
     }
-  }, [businesses, links, introductions, filter, showIntros, zoneNameById]);
+  }, [businesses, links, introductions, filter, showIntros, zoneNameById, onEditBusiness, onMoveBusiness, onDeleteBusiness]);
 
   // Pin-drop mode: install a one-shot click handler.
   useEffect(() => {
@@ -329,7 +355,7 @@ export default function BulawayoMap({
     <div
       className={cn(
         "h-[60vh] w-full md:h-[70vh]",
-        pinDropMode && "indaba-pin-drop-cursor",
+        (pinDropMode || movingPinId) && "indaba-pin-drop-cursor",
       )}
     >
       {/* Wrapper needed: Leaflet mutates containerRef's className (adds

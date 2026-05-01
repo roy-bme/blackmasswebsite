@@ -21,18 +21,7 @@ import type {
 
 export const dynamic = "force-dynamic";
 
-type BusinessRow = Pick<
-  Business,
-  | "id"
-  | "name"
-  | "sector"
-  | "zone_id"
-  | "lat"
-  | "lng"
-  | "est_monthly_volume"
-  | "launch_6"
-  | "notes"
->;
+type BusinessRow = Omit<Business, never> & { active?: boolean };
 
 type LinkRow = Pick<
   SupplyChainLink,
@@ -74,7 +63,7 @@ export default async function MapPage() {
       supabase
         .from("businesses")
         .select(
-          "id, name, sector, zone_id, lat, lng, est_monthly_volume, launch_6, notes",
+          "id, name, sector, zone_id, lat, lng, est_monthly_volume, launch_6, notes, decision_maker_name, decision_maker_title, phone, email, linkedin, key_suppliers, key_customers, pain_points, zimx_fit_score, active",
         ),
       supabase
         .from("supply_chain_links")
@@ -114,6 +103,16 @@ export default async function MapPage() {
       b.est_monthly_volume != null ? Number(b.est_monthly_volume) : null,
     launch_6: b.launch_6,
     notes: b.notes,
+    decision_maker_name: b.decision_maker_name,
+    decision_maker_title: b.decision_maker_title,
+    phone: b.phone,
+    email: b.email,
+    linkedin: b.linkedin,
+    key_suppliers: b.key_suppliers,
+    key_customers: b.key_customers,
+    pain_points: b.pain_points,
+    zimx_fit_score: b.zimx_fit_score != null ? Number(b.zimx_fit_score) : null,
+    active: Boolean(b.active ?? true),
   }));
 
   const links: MapLink[] = linkRows.map((link) => {
@@ -185,6 +184,8 @@ export default async function MapPage() {
         introductions={introductions}
         canSeeIntros={canSeeIntros}
         canAddRecords={canAddRecords}
+        canDeleteRecords={user.role === "admin"}
+        role={user.role}
         currentUserId={user.id}
       />
     </div>

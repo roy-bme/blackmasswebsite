@@ -33,6 +33,16 @@ type AddBusinessDialogProps = {
   onSaved: (info: { sector: string }) => void;
 };
 
+
+const ERROR_MESSAGES: Record<string, string> = {
+  "401": "Session expired. Please sign out and sign back in.",
+  "403": "You don't have permission to add businesses. Contact Roy.",
+  rate_limit: "Too many requests. Wait a moment and try again.",
+  db_error: "Database error saving business. Try again or contact support.",
+  network: "Network error. Check your connection and try again.",
+  default: "Could not save business. Please try again.",
+};
+
 type FormState = {
   name: string;
   sector: string;
@@ -157,7 +167,19 @@ export default function AddBusinessDialog({
     setSubmitting(false);
 
     if (!res.ok) {
-      setError("Could not save business.");
+      console.error("[AddBusinessDialog] save business failed", {
+        status: res.status,
+        error: res.error,
+        response: res,
+      });
+
+      const message =
+        ERROR_MESSAGES[String(res.status)] ??
+        ERROR_MESSAGES[res.error] ??
+        (res.error === "network_error"
+          ? ERROR_MESSAGES.network
+          : ERROR_MESSAGES.default);
+      setError(message);
       return;
     }
 

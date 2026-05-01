@@ -50,6 +50,7 @@ export default function DirectoryClient({ suggested, zones, users, role }: { sug
   const [zoneFilter, setZoneFilter] = useState<string | null>(null);
   const [launch6Only, setLaunch6Only] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [isLoadingBusinesses, setIsLoadingBusinesses] = useState(true);
   const [selected, setSelected] = useState<BizLite | null>(null);
   const [editing, setEditing] = useState(false);
   const [showLogInteraction, setShowLogInteraction] = useState(false);
@@ -63,6 +64,7 @@ export default function DirectoryClient({ suggested, zones, users, role }: { sug
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
     async function loadBusinesses() {
+      setIsLoadingBusinesses(true);
       const [{ data: businessData }, { data: zonesData }, { data: sectorData }] = await Promise.all([
         supabase
           .from("businesses")
@@ -81,6 +83,7 @@ export default function DirectoryClient({ suggested, zones, users, role }: { sug
       setZoneLookup(zoneMap);
       setZoneOptions(loadedZones);
       setDistinctSectors(Array.from(new Set((sectorData ?? []).map((row) => row.sector).filter((sector): sector is string => Boolean(sector)))).sort());
+      setIsLoadingBusinesses(false);
     }
     void loadBusinesses();
   }, []);
@@ -102,6 +105,12 @@ export default function DirectoryClient({ suggested, zones, users, role }: { sug
   }, [filteredBusinesses]);
 
   const onboarded = byLane.get("onboarded")?.length ?? 0;
+  const stageLabelMap = useMemo(() => Object.fromEntries(LANES.filter((lane) => lane.id !== "suggested").map((lane) => [lane.id, lane.label])) as Record<BusinessStage, string>, []);
+  const mobileSortedBusinesses = useMemo(() => [...filteredBusinesses].sort((a, b) => {
+    const stageDiff = STAGE_ORDER.indexOf(b.onboarding_stage) - STAGE_ORDER.indexOf(a.onboarding_stage);
+    if (stageDiff !== 0) return stageDiff;
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  }), [filteredBusinesses]);
 
 
   const canDrag = role !== "bd";
@@ -200,7 +209,30 @@ export default function DirectoryClient({ suggested, zones, users, role }: { sug
       <Button variant="primary" size="sm" onClick={() => setShowAddDialog(true)}>+ Add</Button>
     </>} />
 
-    <div className="md:hidden">...</div>
+    <div className="block md:hidden px-4 pb-24">
+      <div className="max-h-[calc(100vh-220px)] space-y-2 overflow-y-auto pr-1">
+        {isLoadingBusinesses ? Array.from({ length: 3 }).map((_, index) => (
+          <div key={index} className="animate-pulse rounded-md border border-line-10 bg-ink-800 p-3">
+            <div className="h-4 w-2/3 rounded bg-ink-700" />
+            <div className="mt-2 h-3 w-1/2 rounded bg-ink-700" />
+            <div className="mt-2 h-3 w-1/3 rounded bg-ink-700" />
+          </div>
+        )) : null}
+        {!isLoadingBusinesses && mobileSortedBusinesses.length === 0 ? <EmptyState title="No businesses match your filters." /> : null}
+        {!isLoadingBusinesses ? mobileSortedBusinesses.map((b) => (
+          <button key={b.id} type="button" onClick={() => openPanel(b)} className="w-full rounded-md border border-line-10 bg-ink-800 p-3 text-left">
+            <div className="text-sm font-medium text-white">{b.name}</div>
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-fg-mute">
+              <span className="inline-flex items-center gap-1.5"><span className="h-2 w-2 rounded-full" style={{ backgroundColor: getSectorHex(b.sector as any) }} />{b.sector}</span>
+              <Pill size="sm">{stageLabelMap[b.onboarding_stage] ?? b.onboarding_stage}</Pill>
+            </div>
+            <div className="mt-2 text-xs text-fg-mute">{b.zone_id ? (zoneLookup[b.zone_id] ?? "Unassigned") : "Unassigned"}</div>
+            {b.est_monthly_volume ? <div className="mt-1 text-xs text-fg-mute">${b.est_monthly_volume.toLocaleString()}/mo</div> : null}
+          </button>
+        )) : null}
+      </div>
+      <Button variant="primary" className="fixed bottom-4 right-4 z-30" onClick={() => setShowAddDialog(true)}>+ Add Business</Button>
+    </div>
 
     <div className="hidden md:block"><div className="indaba-thin-scroll overflow-x-auto px-6 py-4"><div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${LANES.length}, 230px)` }}>{LANES.map((lane)=>{const items=lane.id==="suggested"?[]:byLane.get(lane.id)??[];const candidateItems=lane.id==="suggested"?suggested:[];const total=items.length+candidateItems.length;return <div key={lane.id} className={`flex min-h-[480px] flex-col border ${lane.isAgent?"border-zimx-gold/35 bg-zimx-gold/[0.04]":"border-line-10 bg-ink-800"}`}><div className="flex items-center justify-between border-b border-line-10 px-3 py-2.5"><span className={`font-mono text-[10px] uppercase tracking-eyebrow ${lane.isAgent?"text-zimx-gold":"text-white"}`}>{lane.label}</span><span className="font-mono text-[10px] text-fg-dim">{total}</span></div><div id={lane.id} className="indaba-thin-scroll flex-1 overflow-y-auto p-2" onDragOver={lane.id !== "suggested" ? (e)=>e.preventDefault() : undefined} onDrop={lane.id !== "suggested" ? (e)=>{e.preventDefault();const businessId=e.dataTransfer.getData("businessId");if(businessId){void handleDrop(businessId,lane.id);}} : undefined}>{candidateItems.map((c)=><SuggestedCard key={c.id} c={c} />)}{lane.id !== "suggested" ? items.map((b)=><BizCard key={b.id} b={b} onClick={()=>openPanel(b)} onPromote={()=>promoteBusiness(b)} canDrag={canDrag} laneId={lane.id} />) : null}{total===0?<div className="border border-dashed border-line-15 p-3 text-[11px] leading-relaxed text-fg-mute">Empty. Move one when ready.</div>:null}</div></div>;})}</div></div></div>
 

@@ -28,6 +28,7 @@ type BulawayoMapProps = {
   onEditBusiness?: (businessId: string) => void;
   onMoveBusiness?: (businessId: string) => void;
   onDeleteBusiness?: (businessId: string) => void;
+  onLogInteraction?: (businessId: string) => void;
 };
 
 type ZonePolygon = {
@@ -116,6 +117,7 @@ export default function BulawayoMap({
   onEditBusiness,
   onMoveBusiness,
   onDeleteBusiness,
+  onLogInteraction,
 }: BulawayoMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -232,6 +234,7 @@ export default function BulawayoMap({
               <button type="button" data-action="edit" data-business-id="${escapeHtml(b.id)}" style="font-size:12px; color:#0B6BFF; background:none; border:0; padding:0; font-weight:600; cursor:pointer;">Edit</button>
               <button type="button" data-action="move" data-business-id="${escapeHtml(b.id)}" style="font-size:12px; color:#A46A00; background:none; border:0; padding:0; font-weight:600; cursor:pointer;">Move Pin</button>
               <button type="button" data-action="delete" data-business-id="${escapeHtml(b.id)}" style="font-size:12px; color:#B42318; background:none; border:0; padding:0; font-weight:600; cursor:pointer;">Delete</button>
+              <button type="button" data-action="log" data-business-id="${escapeHtml(b.id)}" style="font-size:12px; color:#0F766E; background:none; border:0; padding:0; font-weight:600; cursor:pointer;">+ Log Interaction</button>
             </div>
           </div>
         `;
@@ -256,6 +259,7 @@ export default function BulawayoMap({
               if (action === "edit") onEditBusiness?.(businessId);
               if (action === "move") onMoveBusiness?.(businessId);
               if (action === "delete") onDeleteBusiness?.(businessId);
+              if (action === "log") onLogInteraction?.(businessId);
             };
           });
         }).addTo(layers.businesses);
@@ -332,7 +336,7 @@ export default function BulawayoMap({
           .addTo(layers.introductions);
       }
     }
-  }, [businesses, links, introductions, filter, showIntros, zoneNameById, onEditBusiness, onMoveBusiness, onDeleteBusiness]);
+  }, [businesses, links, introductions, filter, showIntros, zoneNameById, onEditBusiness, onMoveBusiness, onDeleteBusiness, onLogInteraction]);
 
   // Pin-drop mode: install a one-shot click handler.
   useEffect(() => {

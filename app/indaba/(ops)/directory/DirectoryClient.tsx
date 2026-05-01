@@ -126,7 +126,7 @@ export default function DirectoryClient({ suggested, zones, users, role }: { sug
     const res = await fetch("/api/ops/businesses/update", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: businessId, onboarding_stage: newStage }),
+      body: JSON.stringify({ id: businessId, patch: { onboarding_stage: newStage } }),
     });
 
     if (!res.ok) {
@@ -161,7 +161,7 @@ export default function DirectoryClient({ suggested, zones, users, role }: { sug
     if (idx < 0 || idx === STAGE_ORDER.length - 1) return;
     const next = STAGE_ORDER[idx + 1];
     setBusinesses((prev) => prev.map((item) => item.id === b.id ? { ...item, onboarding_stage: next } : item));
-    const res = await opsApiPost("/api/ops/businesses/update", { id: b.id, onboarding_stage: next });
+    const res = await opsApiPost("/api/ops/businesses/update", { id: b.id, patch: { onboarding_stage: next } });
     if (!res.ok) {
       setBusinesses((prev) => prev.map((item) => item.id === b.id ? { ...item, onboarding_stage: b.onboarding_stage } : item));
       alert("Promote failed. Please retry.");

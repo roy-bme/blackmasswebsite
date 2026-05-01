@@ -1,9 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { DndContext, type DragEndEvent, PointerSensor, closestCenter, useSensor, useSensors } from "@dnd-kit/core";
-import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import { useRouter } from "next/navigation";
 
 import AddBusinessDialog from "@/components/ops/Map/AddBusinessDialog";
@@ -99,19 +96,12 @@ export default function DirectoryClient({ suggested, zones, users, role }: { sug
 
 
   const canDrag = role !== "bd";
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
-
-  async function handleDragEnd(event: DragEndEvent) {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-
-    const businessId = active.id as string;
-    const newStage = over.id as string;
-
+  async function handleDrop(businessId: string, newStage: string) {
     if (!STAGE_ORDER.includes(newStage as BizLite["onboarding_stage"])) return;
 
-    const previousStage = businesses.find((b) => b.id === businessId)?.onboarding_stage;
-    if (!previousStage || previousStage === newStage) return;
+    const business = businesses.find((b) => b.id === businessId);
+    if (!business || business.onboarding_stage === newStage) return;
+    const previousStage = business.onboarding_stage;
 
     setBusinesses((prev) => prev.map((b) => (b.id === businessId ? { ...b, onboarding_stage: newStage as BizLite["onboarding_stage"] } : b)));
 
@@ -178,7 +168,7 @@ export default function DirectoryClient({ suggested, zones, users, role }: { sug
 
     <div className="md:hidden">...</div>
 
-    <div className="hidden md:block"><div className="indaba-thin-scroll overflow-x-auto px-6 py-4"><DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}><div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${LANES.length}, 230px)` }}>{LANES.map((lane)=>{const items=lane.id==="suggested"?[]:byLane.get(lane.id)??[];const candidateItems=lane.id==="suggested"?suggested:[];const total=items.length+candidateItems.length;return <div key={lane.id} className={`flex min-h-[480px] flex-col border ${lane.isAgent?"border-zimx-gold/35 bg-zimx-gold/[0.04]":"border-line-10 bg-ink-800"}`}><div className="flex items-center justify-between border-b border-line-10 px-3 py-2.5"><span className={`font-mono text-[10px] uppercase tracking-eyebrow ${lane.isAgent?"text-zimx-gold":"text-white"}`}>{lane.label}</span><span className="font-mono text-[10px] text-fg-dim">{total}</span></div><div id={lane.id} className="indaba-thin-scroll flex-1 overflow-y-auto p-2">{candidateItems.map((c)=><SuggestedCard key={c.id} c={c} />)}{lane.id !== "suggested" ? <SortableContext items={items.map((b)=>b.id)} strategy={verticalListSortingStrategy}>{items.map((b)=><BizCard key={b.id} b={b} onClick={()=>openPanel(b)} onPromote={()=>promoteBusiness(b)} canDrag={canDrag} laneId={lane.id} />)}</SortableContext> : null}{total===0?<div className="border border-dashed border-line-15 p-3 text-[11px] leading-relaxed text-fg-mute">Empty. Move one when ready.</div>:null}</div></div>;})}</div></DndContext></div></div>
+    <div className="hidden md:block"><div className="indaba-thin-scroll overflow-x-auto px-6 py-4"><div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${LANES.length}, 230px)` }}>{LANES.map((lane)=>{const items=lane.id==="suggested"?[]:byLane.get(lane.id)??[];const candidateItems=lane.id==="suggested"?suggested:[];const total=items.length+candidateItems.length;return <div key={lane.id} className={`flex min-h-[480px] flex-col border ${lane.isAgent?"border-zimx-gold/35 bg-zimx-gold/[0.04]":"border-line-10 bg-ink-800"}`}><div className="flex items-center justify-between border-b border-line-10 px-3 py-2.5"><span className={`font-mono text-[10px] uppercase tracking-eyebrow ${lane.isAgent?"text-zimx-gold":"text-white"}`}>{lane.label}</span><span className="font-mono text-[10px] text-fg-dim">{total}</span></div><div id={lane.id} className="indaba-thin-scroll flex-1 overflow-y-auto p-2" onDragOver={lane.id !== "suggested" ? (e)=>e.preventDefault() : undefined} onDrop={lane.id !== "suggested" ? (e)=>{e.preventDefault();const businessId=e.dataTransfer.getData("businessId");if(businessId){void handleDrop(businessId,lane.id);}} : undefined}>{candidateItems.map((c)=><SuggestedCard key={c.id} c={c} />)}{lane.id !== "suggested" ? items.map((b)=><BizCard key={b.id} b={b} onClick={()=>openPanel(b)} onPromote={()=>promoteBusiness(b)} canDrag={canDrag} laneId={lane.id} />) : null}{total===0?<div className="border border-dashed border-line-15 p-3 text-[11px] leading-relaxed text-fg-mute">Empty. Move one when ready.</div>:null}</div></div>;})}</div></div></div>
 
     {showAddDialog ? <AddBusinessDialog open={showAddDialog} onClose={()=>setShowAddDialog(false)} zones={zones} coords={{lat:-20.1325,lng:28.6261}} quickAddMode={false} lastSector={distinctSectors[0] ?? "Agriculture"} onSaved={()=>{setShowAddDialog(false);router.refresh();}} /> : null}
 
@@ -190,19 +180,7 @@ function Field({label, value}:{label:string; value:React.ReactNode}) { return <d
 
 function BizCard({ b, onClick, onPromote, canDrag, laneId }: { b: BizLite; onClick: () => void; onPromote: () => void; canDrag: boolean; laneId: BusinessStage | "suggested" }) {
   const sectorHex = getSectorHex(b.sector as any);
-
-  if (!canDrag || laneId === "suggested") {
-    return <Card className="mb-1.5 cursor-pointer border border-line-10 bg-ink-700 p-2.5" style={{ borderLeft: `2px solid ${sectorHex}` }} onClick={onClick}><div className="flex items-start justify-between gap-2"><div className="min-w-0"><div className="text-[13px] font-medium leading-snug text-white">{b.name}</div><div className="mt-1 font-mono text-[9px] uppercase tracking-eyebrow text-fg-mute">{b.sector} · {b.address ?? "—"}</div></div>{b.launch_6 ? <Pill tone="solid" size="sm">L6</Pill> : null}</div><div className="mt-2 flex justify-end"><Button variant="primary" size="sm" className="text-[9px]" disabled={b.onboarding_stage === "onboarded"} onClick={(e)=>{e.stopPropagation();onPromote();}}>Promote</Button></div></Card>;
-  }
-
-  return <SortableBizCard b={b} onClick={onClick} onPromote={onPromote} sectorHex={sectorHex} />;
-}
-
-function SortableBizCard({ b, onClick, onPromote, sectorHex }: { b: BizLite; onClick: () => void; onPromote: () => void; sectorHex: string }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: b.id, data: { stage: b.onboarding_stage } });
-  const style = { transform: CSS.Transform.toString(transform), transition, borderLeft: `2px solid ${sectorHex}` };
-
-  return <Card ref={setNodeRef} style={style} {...attributes} {...listeners} className={`mb-1.5 cursor-grab border border-line-10 bg-ink-700 p-2.5 ${isDragging ? "opacity-50" : ""}`} onClick={onClick}><div className="flex items-start justify-between gap-2"><div className="min-w-0"><div className="text-[13px] font-medium leading-snug text-white">{b.name}</div><div className="mt-1 font-mono text-[9px] uppercase tracking-eyebrow text-fg-mute">{b.sector} · {b.address ?? "—"}</div></div>{b.launch_6 ? <Pill tone="solid" size="sm">L6</Pill> : null}</div><div className="mt-2 flex justify-end"><Button variant="primary" size="sm" className="text-[9px]" disabled={b.onboarding_stage === "onboarded"} onClick={(e)=>{e.stopPropagation();onPromote();}}>Promote</Button></div></Card>;
+  return <Card draggable={canDrag && laneId !== "suggested"} onDragStart={canDrag && laneId !== "suggested" ? (e)=>{e.dataTransfer.setData("businessId", b.id);e.currentTarget.style.opacity="0.5";} : undefined} onDragEnd={canDrag && laneId !== "suggested" ? (e)=>{e.currentTarget.style.opacity="1";} : undefined} className={`mb-1.5 cursor-pointer border border-line-10 bg-ink-700 p-2.5 ${canDrag && laneId !== "suggested" ? "cursor-grab" : ""}`} style={{ borderLeft: `2px solid ${sectorHex}` }} onClick={onClick}><div className="flex items-start justify-between gap-2"><div className="min-w-0"><div className="text-[13px] font-medium leading-snug text-white">{b.name}</div><div className="mt-1 font-mono text-[9px] uppercase tracking-eyebrow text-fg-mute">{b.sector} · {b.address ?? "—"}</div></div>{b.launch_6 ? <Pill tone="solid" size="sm">L6</Pill> : null}</div><div className="mt-2 flex justify-end"><Button variant="primary" size="sm" className="text-[9px]" disabled={b.onboarding_stage === "onboarded"} onClick={(e)=>{e.stopPropagation();onPromote();}}>Promote</Button></div></Card>;
 }
 
 function SuggestedCard({ c }: { c: DiscoveryCandidate }) { return <div className="mb-1.5 border border-zimx-gold/25 bg-ink-700 p-2.5" style={{ borderLeft: `2px solid ${getSectorHex(c.sector ?? "manufacturing")}` }}><div className="text-[13px] font-medium leading-snug text-white">{c.name}</div><div className="mt-1 font-mono text-[9px] uppercase tracking-eyebrow text-fg-mute">agent · {c.source}</div></div>; }

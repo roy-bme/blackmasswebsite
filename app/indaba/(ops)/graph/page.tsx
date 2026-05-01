@@ -1,13 +1,13 @@
 import Card from "@/components/ops/ui/Card";
-import Button from "@/components/ops/ui/Button";
 import EmptyState from "@/components/ops/ui/EmptyState";
 import Eyebrow from "@/components/ops/ui/Eyebrow";
 import Pill from "@/components/ops/ui/Pill";
 import SectorChip from "@/components/ops/ui/SectorChip";
-import SectorDot from "@/components/ops/ui/SectorDot";
 import PageHeader from "@/components/ops/PageHeader";
+import GraphCanvas from "@/components/ops/Graph/GraphCanvas";
+import DetectLoopsButton from "@/components/ops/Graph/DetectLoopsButton";
 import { requireModuleAccess } from "@/lib/ops/auth";
-import { PRIMARY_SECTORS, getSectorHex } from "@/lib/ops/sector-colors";
+import { PRIMARY_SECTORS } from "@/lib/ops/sector-colors";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { Business, Loop, SupplyChainLink } from "@/types/ops";
 
@@ -77,6 +77,10 @@ export default async function GraphPage() {
     });
   }
 
+  const businessById = Object.fromEntries(businesses.map((b) => [b.id, b]));
+  const positionsArr = Array.from(positions.values());
+  const loopMembersArr = Array.from(loopMembers);
+
   return (
     <div>
       <PageHeader
@@ -87,9 +91,7 @@ export default async function GraphPage() {
             {PRIMARY_SECTORS.slice(0, 4).map((s) => (
               <SectorChip key={s} sector={s} active />
             ))}
-            <Button variant="primary" size="sm">
-              Detect loops
-            </Button>
+            <DetectLoopsButton linksCount={links.length} />
           </>
         }
       />
@@ -97,71 +99,13 @@ export default async function GraphPage() {
       <div className="grid gap-4 px-4 py-4 md:grid-cols-[1fr_320px] md:px-6 md:py-5">
         <Card padding="none" className="overflow-hidden">
           <div className="bg-ink-700">
-            <svg
-              viewBox="0 0 880 700"
-              className="block h-[480px] w-full md:h-[640px]"
-            >
-              {RAILS.map((r) => (
-                <g key={r.label}>
-                  <line
-                    x1={40}
-                    y1={r.y}
-                    x2={840}
-                    y2={r.y}
-                    stroke={getSectorHex(r.sector)}
-                    strokeOpacity={0.18}
-                    strokeDasharray="2 6"
-                  />
-                  <text
-                    x={40}
-                    y={r.y - 18}
-                    fill={getSectorHex(r.sector)}
-                    fontFamily="monospace"
-                    fontSize={10}
-                    letterSpacing={2}
-                  >
-                    {r.label.toUpperCase()}
-                  </text>
-                </g>
-              ))}
-              {links.map((link) => {
-                if (!link.supplier_id || !link.buyer_id) return null;
-                const a = positions.get(link.supplier_id);
-                const b = positions.get(link.buyer_id);
-                if (!a || !b) return null;
-                const isLoop = loopMembers.has(a.b.id) && loopMembers.has(b.b.id);
-                return (
-                  <path
-                    key={link.id}
-                    d={`M ${a.x} ${a.y} Q ${(a.x + b.x) / 2} ${(a.y + b.y) / 2 - 30} ${b.x} ${b.y}`}
-                    stroke={isLoop ? "#D4AF37" : "rgba(255,255,255,0.18)"}
-                    strokeWidth={isLoop ? 1.6 : 1}
-                    fill="none"
-                  />
-                );
-              })}
-              {Array.from(positions.values()).map(({ x, y, b }) => (
-                <g key={b.id}>
-                  <circle
-                    cx={x}
-                    cy={y}
-                    r={9}
-                    fill={getSectorHex(b.sector)}
-                    stroke={loopMembers.has(b.id) ? "#D4AF37" : "#14161a"}
-                    strokeWidth={2}
-                  />
-                  <text
-                    x={x}
-                    y={y + 22}
-                    fill="#fff"
-                    fontSize={10}
-                    textAnchor="middle"
-                  >
-                    {b.name.length > 16 ? `${b.name.slice(0, 14)}…` : b.name}
-                  </text>
-                </g>
-              ))}
-            </svg>
+            <GraphCanvas
+              rails={RAILS}
+              positions={positionsArr}
+              links={links}
+              businessById={businessById}
+              loopMembers={loopMembersArr}
+            />
           </div>
         </Card>
 

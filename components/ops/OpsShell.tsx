@@ -9,6 +9,7 @@ import Eyebrow from "@/components/ops/ui/Eyebrow";
 import IndabaLogo from "@/components/ops/ui/IndabaLogo";
 import Pill from "@/components/ops/ui/Pill";
 import NavIcon from "@/components/ops/NavIcon";
+import { ToastProvider } from "@/components/ui/Toast";
 import { cn } from "@/lib/ops/cn";
 import {
   mobileTabsForRole,
@@ -47,6 +48,7 @@ export default function OpsShell({ user, badges, children }: OpsShellProps) {
   const breadcrumb = breadcrumbFor(pathname);
 
   return (
+    <ToastProvider>
     <div className="min-h-screen bg-ink-700 text-white">
       {/* Mobile header — sits above the page. The status-bar safe area is
           covered by the parent body's env(safe-area-inset-top) padding. */}
@@ -167,6 +169,7 @@ export default function OpsShell({ user, badges, children }: OpsShellProps) {
         </nav>
       ) : null}
     </div>
+    </ToastProvider>
   );
 }
 

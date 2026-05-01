@@ -224,16 +224,7 @@ export default function BulawayoMap({
         dashArray: zone.tier === "secondary" ? "4 4" : undefined,
       });
 
-      if (isPriority) {
-        polygon.bindTooltip(zone.name, {
-          permanent: true,
-          direction: "center",
-          className: "indaba-zone-label indaba-zone-label-priority",
-        });
-      } else {
-        polygon.bindTooltip(zone.name, { sticky: true });
-      }
-
+      polygon.bindTooltip(zone.name, { sticky: true });
       polygon.addTo(zonesLayer);
     }
 

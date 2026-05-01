@@ -31,7 +31,7 @@ const ADMIN_ONLY_COLUMNS = new Set<string>(["onboarding_stage", "launch_6"]);
 export async function POST(request: Request) {
   return withOpsWrite(
     request,
-    { module: "/indaba/directory", roles: ["admin", "ops"] },
+    { module: "/indaba/directory", roles: ["admin", "ops", "bd"] },
     async ({ user, service }) => {
       const body = await readJson<Body>(request);
       if (!body || !body.id || typeof body.id !== "string" || !body.patch) {

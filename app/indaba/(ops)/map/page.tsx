@@ -66,7 +66,8 @@ export default async function MapPage() {
   const supabase = createSupabaseServerClient();
 
   const canSeeIntros = user.role === "admin" || user.role === "bd";
-  const canAddRecords = user.role === "admin" || user.role === "ops";
+  const canAddRecords =
+    user.role === "admin" || user.role === "ops" || user.role === "bd";
 
   const [businessesRes, linksRes, zonesRes, introductionsRes, usersRes] =
     await Promise.all([

@@ -16,7 +16,7 @@ type Body = {
 export async function POST(request: Request) {
   return withOpsWrite(
     request,
-    { module: "/indaba/directory", roles: ["admin", "ops"] },
+    { module: "/indaba/directory", roles: ["admin", "ops", "bd"] },
     async ({ user, service }) => {
       const body = await readJson<Body>(request);
       if (!body) return jsonError(400, "invalid_json");

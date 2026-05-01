@@ -33,6 +33,7 @@ type MapWrapperProps = {
   onEditBusiness?: (businessId: string) => void;
   onMoveBusiness?: (businessId: string) => void;
   onDeleteBusiness?: (businessId: string) => void;
+  onLogInteraction?: (businessId: string) => void;
 };
 
 export default function MapWrapper(props: MapWrapperProps) {

@@ -15,6 +15,7 @@ import { opsApiPost } from "@/lib/ops/api-client";
 import type { UserRole } from "@/types/ops";
 
 import AddBusinessDialog from "./AddBusinessDialog";
+import LogInteractionModal from "@/components/ops/Interactions/LogInteractionModal";
 import MapActions from "./MapActions";
 import MapFilters, { type MapFilter } from "./MapFilters";
 import MapLegend from "./MapLegend";
@@ -63,6 +64,7 @@ export default function MapView({
   const [movingPinId, setMovingPinId] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<Record<string, string>>({});
+  const [interactionBusinessId, setInteractionBusinessId] = useState<string | null>(null);
 
   const handleMapClick = useCallback(
     (coords: { lat: number; lng: number }) => {
@@ -160,6 +162,7 @@ export default function MapView({
             onEditBusiness={openEdit}
             onMoveBusiness={(id) => { setMovingPinId(id); setPinDropMode(true); setToast("Click on map to place pin."); }}
             onDeleteBusiness={(id) => { if (!canDeleteRecords) return; void opsApiPost("/api/ops/businesses/update", { id, patch: { active: false } }); setItems((p) => p.filter((b) => b.id !== id)); }}
+            onLogInteraction={(id) => setInteractionBusinessId(id)}
           />
           {canAddRecords ? (
             <MapActions
@@ -265,6 +268,7 @@ export default function MapView({
           }}>Save</Button><Button size="sm" variant="ghost" onClick={() => setSelected(null)}>Cancel</Button></div> : null}
         </div>
       ) : null}
+      {interactionBusinessId ? <LogInteractionModal businessId={interactionBusinessId} businessName={items.find((b) => b.id === interactionBusinessId)?.name ?? "Business"} onClose={() => setInteractionBusinessId(null)} onSaved={() => {}} /> : null}
     </div>
   );
 }

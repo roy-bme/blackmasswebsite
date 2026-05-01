@@ -10,7 +10,7 @@ import Select from "@/components/ops/ui/Select";
 import Textarea from "@/components/ops/ui/Textarea";
 import { opsApiPost } from "@/lib/ops/api-client";
 import { formatCoords, reverseGeocode } from "@/lib/ops/reverse-geocode";
-import { PRIMARY_SECTORS, SECTOR_THEMES } from "@/lib/ops/sector-colors";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 import { getZoneBounds, pointInBounds } from "@/lib/ops/zone-bounds";
 
 import type { MapZone } from "./types";
@@ -76,6 +76,7 @@ export default function AddBusinessDialog({
   const [error, setError] = useState<string | null>(null);
   const [address, setAddress] = useState<string | null>(null);
   const [addressLoading, setAddressLoading] = useState(false);
+  const [sectorOptions, setSectorOptions] = useState<Array<{ label: string; value: string }>>([]);
 
   useEffect(() => {
     if (!open) return;
@@ -117,6 +118,38 @@ export default function AddBusinessDialog({
       .finally(() => setAddressLoading(false));
     return () => controller.abort();
   }, [open, coords]);
+
+  useEffect(() => {
+    let ignore = false;
+    const supabase = createSupabaseBrowserClient();
+
+    async function loadSectors() {
+      const { data } = await supabase
+        .from("businesses")
+        .select("sector")
+        .not("sector", "is", null);
+
+      if (ignore) return;
+
+      const options = Array.from(
+        new Set(
+          (data ?? [])
+            .map((row) => row.sector?.trim())
+            .filter((sector): sector is string => Boolean(sector)),
+        ),
+      )
+        .sort((a, b) => a.localeCompare(b))
+        .map((sector) => ({ label: sector, value: sector }));
+
+      setSectorOptions(options);
+    }
+
+    void loadSectors();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
 
   function handleClose() {
     if (submitting) return;
@@ -188,14 +221,6 @@ export default function AddBusinessDialog({
     router.refresh();
   }
 
-  const sectorOptions = useMemo(
-    () =>
-      PRIMARY_SECTORS.map((key) => ({
-        label: SECTOR_THEMES[key].label,
-        value: key,
-      })),
-    [],
-  );
   const zoneOptions = useMemo(
     () => [
       { label: "Auto / none", value: "" },

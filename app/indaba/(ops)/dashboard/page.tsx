@@ -231,9 +231,12 @@ export default async function DashboardPage({
                     Read full brief
                   </Button>
                   {isAdmin ? (
-                    <Button variant="ghost" size="sm">
+                    <a
+                      href="mailto:roy@blackmass.co.uk?subject=Indaba%20Escalation&body=Hi%20Roy%2C%0A%0A"
+                      className="inline-flex items-center justify-center gap-1 border border-transparent px-3 py-1.5 font-mono text-[11px] uppercase tracking-eyebrow transition-colors h-8 border-white/15 text-fg-mute hover:border-zimx-gold/40 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zimx-gold"
+                    >
                       Escalate to Roy
-                    </Button>
+                    </a>
                   ) : null}
                 </div>
               </Card>

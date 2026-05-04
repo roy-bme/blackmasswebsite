@@ -3,12 +3,15 @@
 type MapFiltersProps = {
   brendonCount: number;
   tafadzwaCount: number;
+  unattributedCount: number;
   candidateCount: number;
   showBrendon: boolean;
   showTafadzwa: boolean;
+  showUnattributed: boolean;
   showCandidates: boolean;
   onToggleBrendon: (next: boolean) => void;
   onToggleTafadzwa: (next: boolean) => void;
+  onToggleUnattributed: (next: boolean) => void;
   onToggleCandidates: (next: boolean) => void;
 };
 
@@ -28,6 +31,7 @@ export default function MapFilters(props: MapFiltersProps) {
       <div className="flex min-w-max items-center gap-2 md:flex-wrap">
         <ToggleRow label="Brendon" count={props.brendonCount} color="#319B42" checked={props.showBrendon} onChange={props.onToggleBrendon} />
         <ToggleRow label="Tafadzwa" count={props.tafadzwaCount} color="#D4A843" checked={props.showTafadzwa} onChange={props.onToggleTafadzwa} />
+        <ToggleRow label="Unattributed" count={props.unattributedCount} color="#D4A843" checked={props.showUnattributed} onChange={props.onToggleUnattributed} />
         <ToggleRow label="Bot Candidates" count={props.candidateCount} color="#6B7A8D" checked={props.showCandidates} onChange={props.onToggleCandidates} />
       </div>
     </div>

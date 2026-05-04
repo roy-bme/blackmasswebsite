@@ -57,6 +57,7 @@ export default function MapView({
   const [items, setItems] = useState(businesses);
   const [showBrendon, setShowBrendon] = useState(true);
   const [showTafadzwa, setShowTafadzwa] = useState(true);
+  const [showUnattributed, setShowUnattributed] = useState(true);
   const [pinDropMode, setPinDropMode] = useState(false);
   const [quickAddMode, setQuickAddMode] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -162,14 +163,17 @@ export default function MapView({
       </div>
 
       <MapFilters
-        brendonCount={items.filter((b) => b.mapped_by !== "458fc192-05a2-472b-9ade-c22cd16ad0e3").length}
+        brendonCount={items.filter((b) => b.mapped_by === "b15b3634-51b4-493a-a80b-662f219164ca").length}
         tafadzwaCount={items.filter((b) => b.mapped_by === "458fc192-05a2-472b-9ade-c22cd16ad0e3").length}
+        unattributedCount={items.filter((b) => b.mapped_by === null || b.mapped_by === "fb29427f-8ed4-4cb2-8ed8-7d134d3a960f").length}
         candidateCount={discoveryCandidates.length}
         showBrendon={showBrendon}
         showTafadzwa={showTafadzwa}
+        showUnattributed={showUnattributed}
         showCandidates={showCandidates}
         onToggleBrendon={setShowBrendon}
         onToggleTafadzwa={setShowTafadzwa}
+        onToggleUnattributed={setShowUnattributed}
         onToggleCandidates={setShowCandidates}
       />
 
@@ -183,6 +187,7 @@ export default function MapView({
             introductions={introductions}
             showBrendon={showBrendon}
             showTafadzwa={showTafadzwa}
+            showUnattributed={showUnattributed}
             showIntros={canSeeIntros}
             pinDropMode={pinDropMode && canAddRecords}
             movingPinId={movingPinId}
@@ -233,10 +238,10 @@ export default function MapView({
           <Card padding="lg">
             <Eyebrow gold>territory · today</Eyebrow>
             <p className="mt-2 text-[20px] font-light tracking-tight text-white">
-              {items.length} businesses · {discoveryCandidates.length} candidates · {links.length} links · {zones.length} zones
+              {items.length} businesses (B:{items.filter((b) => b.mapped_by === "b15b3634-51b4-493a-a80b-662f219164ca").length} · T:{items.filter((b) => b.mapped_by === "458fc192-05a2-472b-9ade-c22cd16ad0e3").length} · ?:{items.filter((b) => b.mapped_by === null || b.mapped_by === "fb29427f-8ed4-4cb2-8ed8-7d134d3a960f").length}) · {discoveryCandidates.length} candidates · {links.length} links · {zones.length} zones
             </p>
             <p className="mt-1 font-mono text-[10px] tracking-eyebrow text-fg-mute">
-              Brendon: {items.filter((b) => b.mapped_by === null || b.mapped_by === "b15b3634-51b4-493a-a80b-662f219164ca" || b.mapped_by === "fb29427f-8ed4-4cb2-8ed8-7d134d3a960f").length} · Tafadzwa: {items.filter((b) => b.mapped_by === "458fc192-05a2-472b-9ade-c22cd16ad0e3").length} · Unattributed: {items.filter((b) => b.mapped_by === null).length} · Intros: {introductions.length}
+              Brendon: {items.filter((b) => b.mapped_by === "b15b3634-51b4-493a-a80b-662f219164ca").length} · Tafadzwa: {items.filter((b) => b.mapped_by === "458fc192-05a2-472b-9ade-c22cd16ad0e3").length} · Unattributed: {items.filter((b) => b.mapped_by === null || b.mapped_by === "fb29427f-8ed4-4cb2-8ed8-7d134d3a960f").length} · Intros: {introductions.length}
             </p>
           </Card>
 

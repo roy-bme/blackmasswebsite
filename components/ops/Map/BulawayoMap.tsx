@@ -21,6 +21,7 @@ type BulawayoMapProps = {
   introductions: MapIntroduction[];
   showBrendon: boolean;
   showTafadzwa: boolean;
+  showUnattributed: boolean;
   showIntros: boolean;
   pinDropMode?: boolean;
   movingPinId?: string | null;
@@ -164,6 +165,7 @@ export default function BulawayoMap({
   introductions,
   showBrendon,
   showTafadzwa,
+  showUnattributed,
   showIntros,
   pinDropMode = false,
   movingPinId = null,
@@ -275,12 +277,18 @@ export default function BulawayoMap({
           Math.min(14, Math.log10(Math.max(1000, volume || 1000)) * 2),
         );
         const isTafadzwa = b.mapped_by === TAFADZWA_UUID;
-        const isBrendonGroup = b.mapped_by === BRENDON_UUID || b.mapped_by === ROY_UUID || b.mapped_by == null;
+        const isBrendon = b.mapped_by === BRENDON_UUID;
+        const isUnattributed = b.mapped_by == null || b.mapped_by === ROY_UUID;
+
         if (isTafadzwa && !showTafadzwa) continue;
-        if (isBrendonGroup && !showBrendon) continue;
-        const fillColor = isTafadzwa ? "#D4A843" : "#319B42";
-        const strokeColor = b.launch_6 ? "#D4AF37" : (isTafadzwa ? "#9E7A21" : "#236F30");
+        if (isBrendon && !showBrendon) continue;
+        if (isUnattributed && !showUnattributed) continue;
+
+        const fillColor = isTafadzwa || isUnattributed ? "#D4A843" : "#319B42";
+        const fillOpacity = isUnattributed ? 0.15 : 0.85;
+        const strokeColor = b.launch_6 ? "#D4AF37" : (isTafadzwa || isUnattributed ? "#9E7A21" : "#236F30");
         const strokeWeight = b.launch_6 ? 3 : 1;
+        const dashArray = isUnattributed ? "4,4" : undefined;
         const zoneName = b.zone_id ? zoneNameById.get(b.zone_id) ?? "—" : "—";
         const notes =
           b.notes && b.notes.length > 120
@@ -305,9 +313,10 @@ export default function BulawayoMap({
         const marker = L.circleMarker([b.lat, b.lng], {
           radius,
           fillColor,
-          fillOpacity: 0.85,
+          fillOpacity,
           color: strokeColor,
           weight: strokeWeight,
+          dashArray,
         });
 
         marker.bindPopup(popupHtml).on("popupopen", (event) => {
@@ -416,7 +425,7 @@ export default function BulawayoMap({
           .addTo(layers.introductions);
       }
     }
-  }, [businesses, discoveryCandidates, links, introductions, showBrendon, showTafadzwa, showIntros, showCandidates, zoneNameById, onEditBusiness, onMoveBusiness, onDeleteBusiness, onLogInteraction, onOpenCandidate]);
+  }, [businesses, discoveryCandidates, links, introductions, showBrendon, showTafadzwa, showUnattributed, showIntros, showCandidates, zoneNameById, onEditBusiness, onMoveBusiness, onDeleteBusiness, onLogInteraction, onOpenCandidate]);
 
   // Pin-drop mode: install a one-shot click handler.
   useEffect(() => {

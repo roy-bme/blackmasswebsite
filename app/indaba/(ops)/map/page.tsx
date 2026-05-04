@@ -99,6 +99,21 @@ export default async function MapPage() {
 
   const businessById = new Map(businessRows.map((b) => [b.id, b]));
   const userNameById = new Map(userRows.map((u) => [u.id, u.name]));
+  const ownerCount = businessRows.reduce(
+    (acc, business) => {
+      if (!business.mapped_by) {
+        acc.unattributed += 1;
+      } else {
+        const ownerName = userNameById.get(business.mapped_by) ?? "";
+        const normalized = ownerName.toLowerCase();
+        if (normalized.includes("brendon")) acc.brendon += 1;
+        else if (normalized.includes("taf")) acc.tafadzwa += 1;
+        else acc.unattributed += 1;
+      }
+      return acc;
+    },
+    { brendon: 0, tafadzwa: 0, unattributed: 0 },
+  );
 
   const businesses: MapBusiness[] = businessRows.map((b) => ({
     id: b.id,
@@ -200,7 +215,7 @@ export default async function MapPage() {
       <PageHeader
         eyebrow="indaba · map · bulawayo"
         title="territory."
-        caption={`${businesses.length} businesses (B:${businesses.filter((b) => b.mapped_by === "b15b3634-51b4-493a-a80b-662f219164ca").length} · T:${businesses.filter((b) => b.mapped_by === "458fc192-05a2-472b-9ade-c22cd16ad0e3").length} · ?:${businesses.filter((b) => b.mapped_by === null || b.mapped_by === "fb29427f-8ed4-4cb2-8ed8-7d134d3a960f").length}) · ${discoveryCandidates.length} candidates · ${links.length} links · ${zones.length} zones`}
+        caption={`${businesses.length} businesses (B:${ownerCount.brendon} · T:${ownerCount.tafadzwa} · ?:${ownerCount.unattributed}) · ${discoveryCandidates.length} candidates · ${links.length} links · ${zones.length} zones`}
         actions={
           canAddRecords ? (
             <Pill tone="gold">{user.role}</Pill>

@@ -41,6 +41,26 @@ type BizLite = {
   key_suppliers: string[] | null; key_customers: string[] | null; pain_points: string[] | null; zimx_fit_score: number | null;
 };
 
+const COMPLETENESS_FIELDS: Array<keyof BizLite> = [
+  "decision_maker_name",
+  "phone",
+  "est_monthly_volume",
+  "key_suppliers",
+  "key_customers",
+  "pain_points",
+  "zone_id",
+];
+
+function getCompleteness(b: BizLite) {
+  const filled = COMPLETENESS_FIELDS.reduce((count, field) => {
+    const value = b[field];
+    if (Array.isArray(value)) return count + (value.length > 0 ? 1 : 0);
+    return count + (value ? 1 : 0);
+  }, 0);
+  const total = COMPLETENESS_FIELDS.length;
+  return { filled, total, percent: Math.round((filled / total) * 100) };
+}
+
 export default function DirectoryClient({ suggested, zones, users, role }: { suggested: DiscoveryCandidate[]; zones: Array<{id:string;name:string;centre_lat:number|null;centre_lng:number|null}>; users: Array<{id:string;name:string}>; role: UserRole; }) {
   const router = useRouter();
   const toast = useToast();
@@ -231,6 +251,7 @@ export default function DirectoryClient({ suggested, zones, users, role }: { sug
             </div>
             <div className="mt-2 text-xs text-fg-mute">{b.zone_id ? (zoneLookup[b.zone_id] ?? "Unassigned") : "Unassigned"}</div>
             {b.est_monthly_volume ? <div className="mt-1 text-xs text-fg-mute">${b.est_monthly_volume.toLocaleString()}/mo</div> : null}
+            <CompletenessBar business={b} className="mt-2" />
           </button>
         )) : null}
       </div>
@@ -241,7 +262,7 @@ export default function DirectoryClient({ suggested, zones, users, role }: { sug
 
     {showAddDialog ? <AddBusinessDialog open={showAddDialog} onClose={()=>setShowAddDialog(false)} zones={zones} coords={{lat:-20.1325,lng:28.6261}} quickAddMode={false} lastSector={distinctSectors[0] ?? "Agriculture"} onSaved={()=>{setShowAddDialog(false);router.refresh();}} /> : null}
 
-    {selected ? <div className="fixed inset-y-0 right-0 z-40 w-full max-w-md border-l border-line-10 bg-ink-900 p-4"><div className="mb-4 flex items-center justify-between"><h3 className="text-white">Business details</h3><Button size="sm" variant="ghost" onClick={()=>setSelected(null)}>Close</Button></div><div className="space-y-3 text-sm text-fg-mute"><Field label="Name" value={editing ? <Input name="name" value={form.name} onChange={(e)=>setForm((p)=>({...p,name:e.target.value}))} /> : selected.name} /><Field label="Sector" value={editing ? <Input name="sector" value={form.sector} onChange={(e)=>setForm((p)=>({...p,sector:e.target.value}))} /> : selected.sector} /><Field label="Contact — Decision maker" value={editing ? <Input name="decision_maker_name" value={form.decision_maker_name} onChange={(e)=>setForm((p)=>({...p,decision_maker_name:e.target.value}))} /> : (selected.decision_maker_name ?? "—")} /><Field label="Contact — Title / role" value={editing ? <Input name="decision_maker_title" value={form.decision_maker_title} onChange={(e)=>setForm((p)=>({...p,decision_maker_title:e.target.value}))} /> : (selected.decision_maker_title ?? "—")} /><Field label="Contact — Phone" value={editing ? <Input type="tel" name="phone" value={form.phone} onChange={(e)=>setForm((p)=>({...p,phone:e.target.value}))} /> : (selected.phone ?? "—")} /><Field label="Contact — Email" value={editing ? <Input type="email" name="email" value={form.email} onChange={(e)=>setForm((p)=>({...p,email:e.target.value}))} /> : (selected.email ?? "—")} /><Field label="Contact — LinkedIn" value={editing ? <Input type="url" name="linkedin" value={form.linkedin} onChange={(e)=>setForm((p)=>({...p,linkedin:e.target.value}))} /> : (selected.linkedin ?? "—")} /><Field label="Zone" value={editing ? <select className="w-full rounded-md border border-line-15 bg-ink-800 px-3 py-2 text-sm text-white" value={form.zone_id} onChange={(e)=>setForm((p)=>({...p,zone_id:e.target.value}))}><option value="">Unassigned</option>{zoneOptions.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}</select> : ((selected.zone_id ? zoneLookup[selected.zone_id] : null) ?? "—")} /><Field label="Stage" value={selected.onboarding_stage} /><Field label="Est. monthly volume" value={editing ? <Input name="est_monthly_volume" value={form.est_monthly_volume} onChange={(e)=>setForm((p)=>({...p,est_monthly_volume:e.target.value}))} /> : (selected.est_monthly_volume?.toString() ?? "—")} /><Field label="ZIMX fit score" value={editing ? <Input type="number" min={0} max={100} name="zimx_fit_score" value={form.zimx_fit_score} onChange={(e)=>setForm((p)=>({...p,zimx_fit_score:e.target.value}))} /> : (selected.zimx_fit_score === null ? "—" : <Pill tone={fitTone(selected.zimx_fit_score)}>{selected.zimx_fit_score}</Pill>)} /><Field label="Key suppliers" value={editing ? <Input name="key_suppliers" value={form.key_suppliers} onChange={(e)=>setForm((p)=>({...p,key_suppliers:e.target.value}))} /> : (selected.key_suppliers?.length ? <div className="flex flex-wrap gap-1.5">{selected.key_suppliers.map((item) => <Pill key={item} size="sm">{item}</Pill>)}</div> : "—")} /><Field label="Key customers" value={editing ? <Input name="key_customers" value={form.key_customers} onChange={(e)=>setForm((p)=>({...p,key_customers:e.target.value}))} /> : (selected.key_customers?.length ? <div className="flex flex-wrap gap-1.5">{selected.key_customers.map((item) => <Pill key={item} size="sm">{item}</Pill>)}</div> : "—")} /><Field label="Pain points" value={editing ? <Input name="pain_points" value={form.pain_points} onChange={(e)=>setForm((p)=>({...p,pain_points:e.target.value}))} /> : (selected.pain_points?.length ? <div className="flex flex-wrap gap-1.5">{selected.pain_points.map((item) => <Pill key={item} size="sm" tone="warn">{item}</Pill>)}</div> : "—")} /><Field label="Notes" value={editing ? <Textarea name="notes" value={form.notes} onChange={(e)=>setForm((p)=>({...p,notes:e.target.value}))} rows={4} /> : (selected.notes ?? "—")} /><Field label="Mapped by" value={users.find((u)=>u.id===selected.mapped_by)?.name ?? "—"} /><Field label="Created" value={new Date(selected.created_at).toLocaleString()} /></div><div className="mt-4">
+    {selected ? <div className="fixed inset-y-0 right-0 z-40 w-full max-w-md border-l border-line-10 bg-ink-900 p-4"><div className="mb-4 flex items-center justify-between"><h3 className="text-white">Business details</h3><Button size="sm" variant="ghost" onClick={()=>setSelected(null)}>Close</Button></div><CompletenessBar business={selected} className="mb-4" /><div className="space-y-3 text-sm text-fg-mute"><Field label="Name" value={editing ? <Input name="name" value={form.name} onChange={(e)=>setForm((p)=>({...p,name:e.target.value}))} /> : selected.name} /><Field label="Sector" value={editing ? <Input name="sector" value={form.sector} onChange={(e)=>setForm((p)=>({...p,sector:e.target.value}))} /> : selected.sector} /><Field label="Contact — Decision maker" value={editing ? <Input name="decision_maker_name" value={form.decision_maker_name} onChange={(e)=>setForm((p)=>({...p,decision_maker_name:e.target.value}))} /> : (selected.decision_maker_name ?? "—")} /><Field label="Contact — Title / role" value={editing ? <Input name="decision_maker_title" value={form.decision_maker_title} onChange={(e)=>setForm((p)=>({...p,decision_maker_title:e.target.value}))} /> : (selected.decision_maker_title ?? "—")} /><Field label="Contact — Phone" value={editing ? <Input type="tel" name="phone" value={form.phone} onChange={(e)=>setForm((p)=>({...p,phone:e.target.value}))} /> : (selected.phone ?? "—")} /><Field label="Contact — Email" value={editing ? <Input type="email" name="email" value={form.email} onChange={(e)=>setForm((p)=>({...p,email:e.target.value}))} /> : (selected.email ?? "—")} /><Field label="Contact — LinkedIn" value={editing ? <Input type="url" name="linkedin" value={form.linkedin} onChange={(e)=>setForm((p)=>({...p,linkedin:e.target.value}))} /> : (selected.linkedin ?? "—")} /><Field label="Zone" value={editing ? <select className="w-full rounded-md border border-line-15 bg-ink-800 px-3 py-2 text-sm text-white" value={form.zone_id} onChange={(e)=>setForm((p)=>({...p,zone_id:e.target.value}))}><option value="">Unassigned</option>{zoneOptions.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}</select> : ((selected.zone_id ? zoneLookup[selected.zone_id] : null) ?? "—")} /><Field label="Stage" value={selected.onboarding_stage} /><Field label="Est. monthly volume" value={editing ? <Input name="est_monthly_volume" value={form.est_monthly_volume} onChange={(e)=>setForm((p)=>({...p,est_monthly_volume:e.target.value}))} /> : (selected.est_monthly_volume?.toString() ?? "—")} /><Field label="ZIMX fit score" value={editing ? <Input type="number" min={0} max={100} name="zimx_fit_score" value={form.zimx_fit_score} onChange={(e)=>setForm((p)=>({...p,zimx_fit_score:e.target.value}))} /> : (selected.zimx_fit_score === null ? "—" : <Pill tone={fitTone(selected.zimx_fit_score)}>{selected.zimx_fit_score}</Pill>)} /><Field label="Key suppliers" value={editing ? <Input name="key_suppliers" value={form.key_suppliers} onChange={(e)=>setForm((p)=>({...p,key_suppliers:e.target.value}))} /> : (selected.key_suppliers?.length ? <div className="flex flex-wrap gap-1.5">{selected.key_suppliers.map((item) => <Pill key={item} size="sm">{item}</Pill>)}</div> : "—")} /><Field label="Key customers" value={editing ? <Input name="key_customers" value={form.key_customers} onChange={(e)=>setForm((p)=>({...p,key_customers:e.target.value}))} /> : (selected.key_customers?.length ? <div className="flex flex-wrap gap-1.5">{selected.key_customers.map((item) => <Pill key={item} size="sm">{item}</Pill>)}</div> : "—")} /><Field label="Pain points" value={editing ? <Input name="pain_points" value={form.pain_points} onChange={(e)=>setForm((p)=>({...p,pain_points:e.target.value}))} /> : (selected.pain_points?.length ? <div className="flex flex-wrap gap-1.5">{selected.pain_points.map((item) => <Pill key={item} size="sm" tone="warn">{item}</Pill>)}</div> : "—")} /><Field label="Notes" value={editing ? <Textarea name="notes" value={form.notes} onChange={(e)=>setForm((p)=>({...p,notes:e.target.value}))} rows={4} /> : (selected.notes ?? "—")} /><Field label="Mapped by" value={users.find((u)=>u.id===selected.mapped_by)?.name ?? "—"} /><Field label="Created" value={new Date(selected.created_at).toLocaleString()} /></div><div className="mt-4">
       <Button size="sm" variant="ghost" onClick={()=>setShowLogInteraction(true)}>+ Log Interaction</Button>
       <div className="mt-3">
         <InteractionsList businessId={selected.id} />
@@ -259,6 +280,18 @@ function BizCard({ b, onClick, onPromote, canDrag, laneId }: { b: BizLite; onCli
 }
 
 function SuggestedCard({ c }: { c: DiscoveryCandidate }) { return <div className="mb-1.5 border border-zimx-gold/25 bg-ink-700 p-2.5" style={{ borderLeft: `2px solid ${getSectorHex(c.sector ?? "manufacturing")}` }}><div className="text-[13px] font-medium leading-snug text-white">{c.name}</div><div className="mt-1 font-mono text-[9px] uppercase tracking-eyebrow text-fg-mute">agent · {c.source}</div></div>; }
+function CompletenessBar({ business, className = "" }: { business: BizLite; className?: string }) {
+  const completeness = getCompleteness(business);
+  return <div className={className}>
+    <div className="mb-1 flex items-center justify-between text-[10px] font-mono uppercase tracking-eyebrow text-fg-mute">
+      <span>Data completeness</span>
+      <span>{completeness.percent}% ({completeness.filled}/{completeness.total})</span>
+    </div>
+    <div className="h-1.5 w-full rounded bg-ink-700">
+      <div className="h-1.5 rounded bg-zimx-gold" style={{ width: `${completeness.percent}%` }} />
+    </div>
+  </div>;
+}
   function fitTone(score: number | null): "neutral" | "warn" | "gold" {
     if (score === null) return "neutral";
     if (score <= 40) return "neutral";

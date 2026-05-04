@@ -28,6 +28,7 @@ type MapWrapperProps = {
   introductions: MapIntroduction[];
   showBrendon: boolean;
   showTafadzwa: boolean;
+  showUnattributed: boolean;
   showIntros: boolean;
   pinDropMode?: boolean;
   movingPinId?: string | null;

@@ -3,6 +3,7 @@ import "leaflet/dist/leaflet.css";
 import MapView from "@/components/ops/Map/MapView";
 import type {
   MapBusiness,
+  MapDiscoveryCandidate,
   MapIntroduction,
   MapLink,
   MapZone,
@@ -58,7 +59,7 @@ export default async function MapPage() {
   const canAddRecords =
     user.role === "admin" || user.role === "ops" || user.role === "bd";
 
-  const [businessesRes, linksRes, zonesRes, introductionsRes, usersRes] =
+  const [businessesRes, linksRes, zonesRes, introductionsRes, usersRes, candidatesRes] =
     await Promise.all([
       supabase
         .from("businesses")
@@ -81,6 +82,12 @@ export default async function MapPage() {
             DataOnly<IntroductionRow>
           >),
       supabase.from("users").select("id, name"),
+      supabase
+        .from("discovery_candidates")
+        .select("id,name,sector,sub_sector,address,zone_id,lat,lng,decision_maker_name,decision_maker_title,phone,email,linkedin,source_url,source_type,discovery_confidence,review_status,review_notes,enrichment_raw,discovered_at")
+        .in("review_status", ["raw", "enriched", "reviewed_hold"])
+        .not("lat", "is", null)
+        .not("lng", "is", null),
     ]);
 
   const businessRows = (businessesRes.data ?? []) as BusinessRow[];
@@ -88,6 +95,7 @@ export default async function MapPage() {
   const zoneRows = (zonesRes.data ?? []) as ZoneRow[];
   const introductionRows = (introductionsRes.data ?? []) as IntroductionRow[];
   const userRows = (usersRes.data ?? []) as UserRow[];
+  const candidateRows = (candidatesRes.data ?? []) as Record<string, unknown>[];
 
   const businessById = new Map(businessRows.map((b) => [b.id, b]));
   const userNameById = new Map(userRows.map((u) => [u.id, u.name]));
@@ -152,6 +160,30 @@ export default async function MapPage() {
     centre_lng: z.centre_lng != null ? Number(z.centre_lng) : null,
   }));
 
+
+  const discoveryCandidates: MapDiscoveryCandidate[] = candidateRows.map((c) => ({
+    id: String(c.id),
+    name: String(c.name ?? "Unnamed candidate"),
+    sector: (c.sector as MapDiscoveryCandidate["sector"]) ?? null,
+    sub_sector: (c.sub_sector as string | null) ?? null,
+    address: (c.address as string | null) ?? null,
+    zone_id: (c.zone_id as string | null) ?? null,
+    lat: Number(c.lat),
+    lng: Number(c.lng),
+    decision_maker_name: (c.decision_maker_name as string | null) ?? null,
+    decision_maker_title: (c.decision_maker_title as string | null) ?? null,
+    phone: (c.phone as string | null) ?? null,
+    email: (c.email as string | null) ?? null,
+    linkedin: (c.linkedin as string | null) ?? null,
+    source_url: (c.source_url as string | null) ?? null,
+    source_type: String(c.source_type ?? "manual"),
+    discovery_confidence: c.discovery_confidence != null ? Number(c.discovery_confidence) : null,
+    review_status: (c.review_status as MapDiscoveryCandidate["review_status"]) ?? "raw",
+    review_notes: (c.review_notes as string | null) ?? null,
+    enrichment_raw: (c.enrichment_raw as Record<string, unknown> | null) ?? null,
+    discovered_at: String(c.discovered_at ?? new Date().toISOString()),
+  }));
+
   const introductions: MapIntroduction[] = introductionRows.map((intro) => ({
     id: intro.id,
     contact_name: intro.contact_name,
@@ -167,7 +199,7 @@ export default async function MapPage() {
       <PageHeader
         eyebrow="indaba · map · bulawayo"
         title="territory."
-        caption={`${businesses.length} businesses · ${links.length} links · ${zones.length} zones`}
+        caption={`${businesses.length} businesses · ${discoveryCandidates.length} candidates · ${links.length} links · ${zones.length} zones`}
         actions={
           canAddRecords ? (
             <Pill tone="gold">{user.role}</Pill>
@@ -182,6 +214,7 @@ export default async function MapPage() {
         links={links}
         zones={zones}
         introductions={introductions}
+        discoveryCandidates={discoveryCandidates}
         canSeeIntros={canSeeIntros}
         canAddRecords={canAddRecords}
         canDeleteRecords={user.role === "admin"}

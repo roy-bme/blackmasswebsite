@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import type { MapFilter } from "./MapFilters";
 import type {
   MapBusiness,
+  MapDiscoveryCandidate,
   MapIntroduction,
   MapLink,
   MapZone,
@@ -22,6 +23,7 @@ const BulawayoMap = dynamic(() => import("./BulawayoMap"), {
 
 type MapWrapperProps = {
   businesses: MapBusiness[];
+  discoveryCandidates: MapDiscoveryCandidate[];
   links: MapLink[];
   zones: MapZone[];
   introductions: MapIntroduction[];
@@ -34,6 +36,8 @@ type MapWrapperProps = {
   onMoveBusiness?: (businessId: string) => void;
   onDeleteBusiness?: (businessId: string) => void;
   onLogInteraction?: (businessId: string) => void;
+  showCandidates?: boolean;
+  onOpenCandidate?: (candidateId: string) => void;
 };
 
 export default function MapWrapper(props: MapWrapperProps) {

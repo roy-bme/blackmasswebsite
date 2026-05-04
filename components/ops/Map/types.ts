@@ -20,6 +20,7 @@ export type MapBusiness = {
   pain_points: string[] | null;
   zimx_fit_score: number | null;
   active: boolean;
+  mapped_by: string | null;
 };
 
 export type MapLinkEndpoint = {

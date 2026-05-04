@@ -1,79 +1,34 @@
 "use client";
 
-import { cn } from "@/lib/ops/cn";
-
-export type MapFilter =
-  | "all"
-  | "mining"
-  | "manufacturing"
-  | "retail"
-  | "services"
-  | "agriculture"
-  | "fuel"
-  | "wholesale"
-  | "fmcg"
-  | "distribution"
-  | "hardware"
-  | "contacts";
-
 type MapFiltersProps = {
-  active: MapFilter;
-  onChange: (filter: MapFilter) => void;
-  canSeeContacts: boolean;
+  brendonCount: number;
+  tafadzwaCount: number;
+  candidateCount: number;
+  showBrendon: boolean;
+  showTafadzwa: boolean;
   showCandidates: boolean;
+  onToggleBrendon: (next: boolean) => void;
+  onToggleTafadzwa: (next: boolean) => void;
   onToggleCandidates: (next: boolean) => void;
 };
 
-const SECTOR_CHIPS: Array<{ value: MapFilter; label: string }> = [
-  { value: "all", label: "All" },
-  { value: "mining", label: "Mining" },
-  { value: "manufacturing", label: "Manufacturing" },
-  { value: "retail", label: "Retail" },
-  { value: "services", label: "Services" },
-  { value: "agriculture", label: "Agriculture" },
-  { value: "fuel", label: "Fuel" },
-];
-
-export default function MapFilters({
-  active,
-  onChange,
-  canSeeContacts,
-  showCandidates,
-  onToggleCandidates,
-}: MapFiltersProps) {
-  const chips = canSeeContacts
-    ? [...SECTOR_CHIPS, { value: "contacts" as MapFilter, label: "Contacts" }]
-    : SECTOR_CHIPS;
-
+function ToggleRow({ label, count, color, checked, onChange }: { label: string; count: number; color: string; checked: boolean; onChange: (next: boolean) => void }) {
   return (
-    <div
-      className="-mx-4 overflow-x-auto px-4 pb-1 md:mx-0 md:overflow-visible md:px-0"
-      style={{ WebkitOverflowScrolling: "touch" }}
-    >
+    <label className="inline-flex items-center gap-2 border border-line-15 bg-ink-800/70 px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
+      <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
+      <span>{label} ({count})</span>
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} />
+    </label>
+  );
+}
+
+export default function MapFilters(props: MapFiltersProps) {
+  return (
+    <div className="-mx-4 overflow-x-auto px-4 pb-1 md:mx-0 md:overflow-visible md:px-0" style={{ WebkitOverflowScrolling: "touch" }}>
       <div className="flex min-w-max items-center gap-2 md:flex-wrap">
-        {chips.map((chip) => {
-          const isActive = active === chip.value;
-          return (
-            <button
-              key={chip.value}
-              type="button"
-              onClick={() => onChange(chip.value)}
-              aria-pressed={isActive}
-              className={cn(
-                "whitespace-nowrap border px-3 py-1.5 font-mono text-[11px] uppercase tracking-eyebrow transition-colors",
-                isActive
-                  ? "border-zimx-gold bg-zimx-gold/10 text-zimx-gold"
-                  : "border-line-15 bg-transparent text-fg-mute hover:border-line-30 hover:text-white",
-              )}
-            >
-              {chip.label}
-            </button>
-          );
-        })}
-        <label className="ml-1 inline-flex items-center gap-1.5 whitespace-nowrap border border-line-15 px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
-          <input type="checkbox" checked={showCandidates} onChange={(e) => onToggleCandidates(e.target.checked)} />
-          Show bot candidates
-        </label>
+        <ToggleRow label="Brendon" count={props.brendonCount} color="#319B42" checked={props.showBrendon} onChange={props.onToggleBrendon} />
+        <ToggleRow label="Tafadzwa" count={props.tafadzwaCount} color="#D4A843" checked={props.showTafadzwa} onChange={props.onToggleTafadzwa} />
+        <ToggleRow label="Bot Candidates" count={props.candidateCount} color="#6B7A8D" checked={props.showCandidates} onChange={props.onToggleCandidates} />
       </div>
     </div>
   );

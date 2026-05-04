@@ -64,7 +64,7 @@ export default async function MapPage() {
       supabase
         .from("businesses")
         .select(
-          "id, name, sector, zone_id, lat, lng, est_monthly_volume, launch_6, notes, decision_maker_name, decision_maker_title, phone, email, linkedin, key_suppliers, key_customers, pain_points, zimx_fit_score, active",
+          "id, name, sector, zone_id, lat, lng, est_monthly_volume, launch_6, notes, decision_maker_name, decision_maker_title, phone, email, linkedin, key_suppliers, key_customers, pain_points, zimx_fit_score, active, mapped_by",
         ),
       supabase
         .from("supply_chain_links")
@@ -121,6 +121,7 @@ export default async function MapPage() {
     pain_points: b.pain_points,
     zimx_fit_score: b.zimx_fit_score != null ? Number(b.zimx_fit_score) : null,
     active: Boolean(b.active ?? true),
+    mapped_by: b.mapped_by ?? null,
   }));
 
   const links: MapLink[] = linkRows.map((link) => {

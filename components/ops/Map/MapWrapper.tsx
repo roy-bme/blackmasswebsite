@@ -2,7 +2,6 @@
 
 import dynamic from "next/dynamic";
 
-import type { MapFilter } from "./MapFilters";
 import type {
   MapBusiness,
   MapDiscoveryCandidate,
@@ -27,7 +26,8 @@ type MapWrapperProps = {
   links: MapLink[];
   zones: MapZone[];
   introductions: MapIntroduction[];
-  filter: MapFilter;
+  showBrendon: boolean;
+  showTafadzwa: boolean;
   showIntros: boolean;
   pinDropMode?: boolean;
   movingPinId?: string | null;

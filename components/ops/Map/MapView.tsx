@@ -23,6 +23,7 @@ import MapLegend from "./MapLegend";
 import MapWrapper from "./MapWrapper";
 import type {
   MapBusiness,
+  MapDiscoveryCandidate,
   MapIntroduction,
   MapLink,
   MapZone,
@@ -31,6 +32,7 @@ import type {
 type MapViewProps = {
   businesses: MapBusiness[];
   links: MapLink[];
+  discoveryCandidates: MapDiscoveryCandidate[];
   zones: MapZone[];
   introductions: MapIntroduction[];
   canSeeIntros: boolean;
@@ -43,6 +45,7 @@ type MapViewProps = {
 export default function MapView({
   businesses,
   links,
+  discoveryCandidates,
   zones,
   introductions,
   canSeeIntros,
@@ -67,6 +70,9 @@ export default function MapView({
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<Record<string, string>>({});
   const [interactionBusinessId, setInteractionBusinessId] = useState<string | null>(null);
+  const [showCandidates, setShowCandidates] = useState(true);
+  const [selectedCandidate, setSelectedCandidate] = useState<MapDiscoveryCandidate | null>(null);
+  const [reviewNotes, setReviewNotes] = useState("");
 
   const handleMapClick = useCallback(
     (coords: { lat: number; lng: number }) => {
@@ -159,12 +165,15 @@ export default function MapView({
         active={filter}
         onChange={setFilter}
         canSeeContacts={canSeeIntros}
+        showCandidates={showCandidates}
+        onToggleCandidates={setShowCandidates}
       />
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_360px]">
         <div className="relative overflow-hidden border border-line-15">
           <MapWrapper
             businesses={items}
+            discoveryCandidates={discoveryCandidates}
             links={links}
             zones={zones}
             introductions={introductions}
@@ -190,6 +199,8 @@ export default function MapView({
               })();
             }}
             onLogInteraction={(id) => setInteractionBusinessId(id)}
+            showCandidates={showCandidates}
+            onOpenCandidate={(id) => setSelectedCandidate(discoveryCandidates.find((c) => c.id === id) ?? null)}
           />
           {canAddRecords ? (
             <MapActions
@@ -217,7 +228,7 @@ export default function MapView({
           <Card padding="lg">
             <Eyebrow gold>territory · today</Eyebrow>
             <p className="mt-2 text-[20px] font-light tracking-tight text-white">
-              {items.length} businesses · {links.length} links
+              {items.length} businesses · {discoveryCandidates.length} candidates · {links.length} links
             </p>
             <p className="mt-1 font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
               {introductions.length} intros · {zones.length} zones
@@ -297,6 +308,23 @@ export default function MapView({
         </div>
       ) : null}
       {interactionBusinessId ? <LogInteractionModal businessId={interactionBusinessId} businessName={items.find((b) => b.id === interactionBusinessId)?.name ?? "Business"} onClose={() => setInteractionBusinessId(null)} onSaved={() => {}} /> : null}
+      {selectedCandidate ? <div className="fixed inset-y-0 right-0 z-40 w-full max-w-md overflow-y-auto border-l border-line-10 bg-ink-900 p-4 text-white">
+        <div className="mb-3 flex items-center justify-between"><h3>UNVERIFIED — Bot Discovery</h3><Button size="sm" variant="ghost" onClick={() => setSelectedCandidate(null)}>Close</Button></div>
+        <div className="space-y-2 text-sm">
+          <div className="font-semibold">{selectedCandidate.name}</div>
+          <div>{selectedCandidate.sector ?? "Unknown sector"} · {selectedCandidate.address ?? "No address"}</div>
+          <div>Confidence: {"★".repeat(selectedCandidate.discovery_confidence ?? 0)}{"☆".repeat(5 - (selectedCandidate.discovery_confidence ?? 0))}</div>
+          <div>Discovered: {new Date(selectedCandidate.discovered_at).toLocaleString()}</div>
+          {selectedCandidate.source_url ? <a className="text-zimx-gold underline" href={selectedCandidate.source_url} target="_blank">Source URL</a> : null}
+          {selectedCandidate.enrichment_raw ? <details><summary className="cursor-pointer">Enrichment JSON</summary><pre className="mt-2 max-h-56 overflow-auto rounded bg-ink-800 p-2 text-xs">{JSON.stringify(selectedCandidate.enrichment_raw, null, 2)}</pre></details> : null}
+          <Textarea value={reviewNotes} onChange={(e)=>setReviewNotes(e.target.value)} rows={3} placeholder="Review notes (optional)" />
+          <div className="flex gap-2">
+            <Button size="sm" variant="primary" onClick={async()=>{const res=await opsApiPost('/api/ops/discovery-candidates/review',{candidateId:selectedCandidate.id,action:'promote',reviewNotes}); if(!res.ok){toast.error('Could not promote candidate.'); return;} toast.success('Candidate promoted. Refreshing...'); window.location.reload();}}>Confirm / Promote</Button>
+            <Button size="sm" variant="ghost" onClick={async()=>{const res=await opsApiPost('/api/ops/discovery-candidates/review',{candidateId:selectedCandidate.id,action:'reject',reviewNotes}); if(!res.ok){toast.error('Could not reject candidate.'); return;} setSelectedCandidate(null); window.location.reload();}}>Reject</Button>
+            <Button size="sm" variant="ghost" onClick={async()=>{const res=await opsApiPost('/api/ops/discovery-candidates/review',{candidateId:selectedCandidate.id,action:'hold',reviewNotes}); if(!res.ok){toast.error('Could not hold candidate.'); return;} setSelectedCandidate(null); window.location.reload();}}>Hold</Button>
+          </div>
+        </div>
+      </div> : null}
     </div>
   );
 }

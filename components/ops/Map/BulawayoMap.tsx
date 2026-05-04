@@ -10,6 +10,7 @@ import { getSectorHex } from "@/lib/ops/sector-colors";
 import type { MapFilter } from "./MapFilters";
 import type {
   MapBusiness,
+  MapDiscoveryCandidate,
   MapIntroduction,
   MapLink,
   MapZone,
@@ -17,6 +18,7 @@ import type {
 
 type BulawayoMapProps = {
   businesses: MapBusiness[];
+  discoveryCandidates: MapDiscoveryCandidate[];
   links: MapLink[];
   zones: MapZone[];
   introductions: MapIntroduction[];
@@ -29,6 +31,8 @@ type BulawayoMapProps = {
   onMoveBusiness?: (businessId: string) => void;
   onDeleteBusiness?: (businessId: string) => void;
   onLogInteraction?: (businessId: string) => void;
+  showCandidates?: boolean;
+  onOpenCandidate?: (candidateId: string) => void;
 };
 
 type ZonePolygon = {
@@ -156,6 +160,7 @@ function hashJitter(id: string, salt: number): number {
 
 export default function BulawayoMap({
   businesses,
+  discoveryCandidates,
   links,
   zones,
   introductions,
@@ -168,6 +173,8 @@ export default function BulawayoMap({
   onMoveBusiness,
   onDeleteBusiness,
   onLogInteraction,
+  showCandidates = true,
+  onOpenCandidate,
 }: BulawayoMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -254,6 +261,7 @@ export default function BulawayoMap({
     const sectorFilter =
       filter === "all" || filter === "contacts" ? null : filter;
     const showBusinessLayer = filter !== "contacts";
+    const showCandidateLayer = filter !== "contacts" && showCandidates;
     const showIntroLayer =
       showIntros && (filter === "all" || filter === "contacts");
     const showLinkLayer = filter === "all";
@@ -315,6 +323,24 @@ export default function BulawayoMap({
               if (action === "log") onLogInteraction?.(businessId);
             };
           });
+        }).addTo(layers.businesses);
+      }
+    }
+    if (showCandidateLayer) {
+      for (const c of discoveryCandidates) {
+        if (sectorFilter && c.sector !== sectorFilter) continue;
+        const onHold = c.review_status === "reviewed_hold";
+        const icon = L.divIcon({
+          className: "indaba-candidate-marker",
+          html: `<div style="width:18px;height:18px;border-radius:9999px;border:2px dashed ${onHold ? "#D4AF37" : "#e5e7eb"};background:rgba(0,0,0,0.05);opacity:0.5;display:flex;align-items:center;justify-content:center;color:${onHold ? "#D4AF37" : "#f5f5f5"};font-size:11px;font-weight:700;">?</div>`,
+          iconSize: [18, 18],
+          iconAnchor: [9, 9],
+        });
+        const popupHtml = `<div style="font-size:13px;min-width:170px;"><div style="font-weight:600;">${escapeHtml(c.name)}</div><div style="font-size:12px;color:#666">${escapeHtml(c.sector ?? "unknown")} · Unverified</div><button type="button" data-action="review" data-candidate-id="${escapeHtml(c.id)}" style="margin-top:8px;font-size:12px;color:#0B6BFF;background:none;border:0;padding:0;font-weight:600;cursor:pointer;">Review candidate</button></div>`;
+        L.marker([c.lat, c.lng], { icon }).bindPopup(popupHtml).on("popupopen", (event) => {
+          const el = event.popup.getElement();
+          const btn = el?.querySelector<HTMLButtonElement>('button[data-action=\"review\"]');
+          if (btn) btn.onclick = () => onOpenCandidate?.(String(btn.dataset.candidateId ?? ""));
         }).addTo(layers.businesses);
       }
     }
@@ -389,7 +415,7 @@ export default function BulawayoMap({
           .addTo(layers.introductions);
       }
     }
-  }, [businesses, links, introductions, filter, showIntros, zoneNameById, onEditBusiness, onMoveBusiness, onDeleteBusiness, onLogInteraction]);
+  }, [businesses, discoveryCandidates, links, introductions, filter, showIntros, showCandidates, zoneNameById, onEditBusiness, onMoveBusiness, onDeleteBusiness, onLogInteraction, onOpenCandidate]);
 
   // Pin-drop mode: install a one-shot click handler.
   useEffect(() => {

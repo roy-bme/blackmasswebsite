@@ -20,6 +20,8 @@ type MapFiltersProps = {
   active: MapFilter;
   onChange: (filter: MapFilter) => void;
   canSeeContacts: boolean;
+  showCandidates: boolean;
+  onToggleCandidates: (next: boolean) => void;
 };
 
 const SECTOR_CHIPS: Array<{ value: MapFilter; label: string }> = [
@@ -36,6 +38,8 @@ export default function MapFilters({
   active,
   onChange,
   canSeeContacts,
+  showCandidates,
+  onToggleCandidates,
 }: MapFiltersProps) {
   const chips = canSeeContacts
     ? [...SECTOR_CHIPS, { value: "contacts" as MapFilter, label: "Contacts" }]
@@ -46,7 +50,7 @@ export default function MapFilters({
       className="-mx-4 overflow-x-auto px-4 pb-1 md:mx-0 md:overflow-visible md:px-0"
       style={{ WebkitOverflowScrolling: "touch" }}
     >
-      <div className="flex min-w-max gap-2 md:flex-wrap">
+      <div className="flex min-w-max items-center gap-2 md:flex-wrap">
         {chips.map((chip) => {
           const isActive = active === chip.value;
           return (
@@ -66,6 +70,10 @@ export default function MapFilters({
             </button>
           );
         })}
+        <label className="ml-1 inline-flex items-center gap-1.5 whitespace-nowrap border border-line-15 px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
+          <input type="checkbox" checked={showCandidates} onChange={(e) => onToggleCandidates(e.target.checked)} />
+          Show bot candidates
+        </label>
       </div>
     </div>
   );

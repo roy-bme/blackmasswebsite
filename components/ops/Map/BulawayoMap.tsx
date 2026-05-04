@@ -5,9 +5,6 @@ import "leaflet/dist/leaflet.css";
 import { useEffect, useMemo, useRef } from "react";
 
 import { cn } from "@/lib/ops/cn";
-import { getSectorHex } from "@/lib/ops/sector-colors";
-
-import type { MapFilter } from "./MapFilters";
 import type {
   MapBusiness,
   MapDiscoveryCandidate,
@@ -22,7 +19,8 @@ type BulawayoMapProps = {
   links: MapLink[];
   zones: MapZone[];
   introductions: MapIntroduction[];
-  filter: MapFilter;
+  showBrendon: boolean;
+  showTafadzwa: boolean;
   showIntros: boolean;
   pinDropMode?: boolean;
   movingPinId?: string | null;
@@ -164,7 +162,8 @@ export default function BulawayoMap({
   links,
   zones,
   introductions,
-  filter,
+  showBrendon,
+  showTafadzwa,
   showIntros,
   pinDropMode = false,
   movingPinId = null,
@@ -176,6 +175,9 @@ export default function BulawayoMap({
   showCandidates = true,
   onOpenCandidate,
 }: BulawayoMapProps) {
+  const BRENDON_UUID = "b15b3634-51b4-493a-a80b-662f219164ca";
+  const TAFADZWA_UUID = "458fc192-05a2-472b-9ade-c22cd16ad0e3";
+  const ROY_UUID = "fb29427f-8ed4-4cb2-8ed8-7d134d3a960f";
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const onMapClickRef = useRef(onMapClick);
@@ -258,17 +260,13 @@ export default function BulawayoMap({
     layers.links.clearLayers();
     layers.introductions.clearLayers();
 
-    const sectorFilter =
-      filter === "all" || filter === "contacts" ? null : filter;
-    const showBusinessLayer = filter !== "contacts";
-    const showCandidateLayer = filter !== "contacts" && showCandidates;
-    const showIntroLayer =
-      showIntros && (filter === "all" || filter === "contacts");
-    const showLinkLayer = filter === "all";
+    const showBusinessLayer = true;
+    const showCandidateLayer = showCandidates;
+    const showIntroLayer = showIntros;
+    const showLinkLayer = true;
 
     if (showBusinessLayer) {
       for (const b of businesses) {
-        if (sectorFilter && b.sector !== sectorFilter) continue;
         if (b.lat == null || b.lng == null) continue;
 
         const volume = b.est_monthly_volume ?? 0;
@@ -276,8 +274,12 @@ export default function BulawayoMap({
           6,
           Math.min(14, Math.log10(Math.max(1000, volume || 1000)) * 2),
         );
-        const fillColor = getSectorHex(b.sector);
-        const strokeColor = b.launch_6 ? "#D4AF37" : fillColor;
+        const isTafadzwa = b.mapped_by === TAFADZWA_UUID;
+        const isBrendonGroup = b.mapped_by === BRENDON_UUID || b.mapped_by === ROY_UUID || b.mapped_by == null;
+        if (isTafadzwa && !showTafadzwa) continue;
+        if (isBrendonGroup && !showBrendon) continue;
+        const fillColor = isTafadzwa ? "#D4A843" : "#319B42";
+        const strokeColor = b.launch_6 ? "#D4AF37" : (isTafadzwa ? "#9E7A21" : "#236F30");
         const strokeWeight = b.launch_6 ? 3 : 1;
         const zoneName = b.zone_id ? zoneNameById.get(b.zone_id) ?? "—" : "—";
         const notes =
@@ -328,7 +330,6 @@ export default function BulawayoMap({
     }
     if (showCandidateLayer) {
       for (const c of discoveryCandidates) {
-        if (sectorFilter && c.sector !== sectorFilter) continue;
         const onHold = c.review_status === "reviewed_hold";
         const icon = L.divIcon({
           className: "indaba-candidate-marker",
@@ -415,7 +416,7 @@ export default function BulawayoMap({
           .addTo(layers.introductions);
       }
     }
-  }, [businesses, discoveryCandidates, links, introductions, filter, showIntros, showCandidates, zoneNameById, onEditBusiness, onMoveBusiness, onDeleteBusiness, onLogInteraction, onOpenCandidate]);
+  }, [businesses, discoveryCandidates, links, introductions, showBrendon, showTafadzwa, showIntros, showCandidates, zoneNameById, onEditBusiness, onMoveBusiness, onDeleteBusiness, onLogInteraction, onOpenCandidate]);
 
   // Pin-drop mode: install a one-shot click handler.
   useEffect(() => {

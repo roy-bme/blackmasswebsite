@@ -7,7 +7,6 @@ import Eyebrow from "@/components/ops/ui/Eyebrow";
 import EmptyState from "@/components/ops/ui/EmptyState";
 import OfflineBanner from "@/components/ops/ui/OfflineBanner";
 import Pill from "@/components/ops/ui/Pill";
-import SectorDot from "@/components/ops/ui/SectorDot";
 import Input from "@/components/ops/ui/Input";
 import Textarea from "@/components/ops/ui/Textarea";
 import Button from "@/components/ops/ui/Button";
@@ -18,7 +17,7 @@ import type { UserRole } from "@/types/ops";
 import AddBusinessDialog from "./AddBusinessDialog";
 import LogInteractionModal from "@/components/ops/Interactions/LogInteractionModal";
 import MapActions from "./MapActions";
-import MapFilters, { type MapFilter } from "./MapFilters";
+import MapFilters from "./MapFilters";
 import MapLegend from "./MapLegend";
 import MapWrapper from "./MapWrapper";
 import type {
@@ -56,7 +55,8 @@ export default function MapView({
 }: MapViewProps) {
   const toast = useToast();
   const [items, setItems] = useState(businesses);
-  const [filter, setFilter] = useState<MapFilter>("all");
+  const [showBrendon, setShowBrendon] = useState(true);
+  const [showTafadzwa, setShowTafadzwa] = useState(true);
   const [pinDropMode, setPinDropMode] = useState(false);
   const [quickAddMode, setQuickAddMode] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -162,10 +162,14 @@ export default function MapView({
       </div>
 
       <MapFilters
-        active={filter}
-        onChange={setFilter}
-        canSeeContacts={canSeeIntros}
+        brendonCount={items.filter((b) => b.mapped_by !== "458fc192-05a2-472b-9ade-c22cd16ad0e3").length}
+        tafadzwaCount={items.filter((b) => b.mapped_by === "458fc192-05a2-472b-9ade-c22cd16ad0e3").length}
+        candidateCount={discoveryCandidates.length}
+        showBrendon={showBrendon}
+        showTafadzwa={showTafadzwa}
         showCandidates={showCandidates}
+        onToggleBrendon={setShowBrendon}
+        onToggleTafadzwa={setShowTafadzwa}
         onToggleCandidates={setShowCandidates}
       />
 
@@ -177,7 +181,8 @@ export default function MapView({
             links={links}
             zones={zones}
             introductions={introductions}
-            filter={filter}
+            showBrendon={showBrendon}
+            showTafadzwa={showTafadzwa}
             showIntros={canSeeIntros}
             pinDropMode={pinDropMode && canAddRecords}
             movingPinId={movingPinId}
@@ -228,10 +233,10 @@ export default function MapView({
           <Card padding="lg">
             <Eyebrow gold>territory · today</Eyebrow>
             <p className="mt-2 text-[20px] font-light tracking-tight text-white">
-              {items.length} businesses · {discoveryCandidates.length} candidates · {links.length} links
+              {items.length} businesses · {discoveryCandidates.length} candidates · {links.length} links · {zones.length} zones
             </p>
-            <p className="mt-1 font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
-              {introductions.length} intros · {zones.length} zones
+            <p className="mt-1 font-mono text-[10px] tracking-eyebrow text-fg-mute">
+              Brendon: {items.filter((b) => b.mapped_by === null || b.mapped_by === "b15b3634-51b4-493a-a80b-662f219164ca" || b.mapped_by === "fb29427f-8ed4-4cb2-8ed8-7d134d3a960f").length} · Tafadzwa: {items.filter((b) => b.mapped_by === "458fc192-05a2-472b-9ade-c22cd16ad0e3").length} · Unattributed: {items.filter((b) => b.mapped_by === null).length} · Intros: {introductions.length}
             </p>
           </Card>
 
@@ -243,7 +248,7 @@ export default function MapView({
                     {b.name}
                   </div>
                   <div className="mt-1 flex items-center gap-1.5">
-                    <SectorDot sector={b.sector} />
+                    <span className="inline-block h-2.5 w-2.5" style={{ backgroundColor: b.mapped_by === "458fc192-05a2-472b-9ade-c22cd16ad0e3" ? "#D4A843" : "#319B42" }} />
                     <span className="font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
                       {b.sector}
                       {b.est_monthly_volume

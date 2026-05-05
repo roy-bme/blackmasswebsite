@@ -77,7 +77,7 @@ export default function MapView({
 
   const handleMapClick = useCallback(
     (coords: { lat: number; lng: number }) => {
-      if (!pinDropMode) return;
+      if (!canAddRecords || !pinDropMode) return;
       if (movingPinId) {
         const targetId = movingPinId;
         const previous = items.find((b) => b.id === targetId);
@@ -101,7 +101,7 @@ export default function MapView({
         setDialogOpen(true);
       }
     },
-    [pinDropMode, movingPinId, items, toast],
+    [canAddRecords, pinDropMode, movingPinId, items, toast],
   );
 
   const exitPinDrop = useCallback(() => {
@@ -192,8 +192,8 @@ export default function MapView({
             pinDropMode={pinDropMode && canAddRecords}
             movingPinId={movingPinId}
             onMapClick={handleMapClick}
-            onEditBusiness={openEdit}
-            onMoveBusiness={(id) => { setMovingPinId(id); setPinDropMode(true); setHint("Click on map to place pin."); }}
+            onEditBusiness={canAddRecords ? openEdit : undefined}
+            onMoveBusiness={canAddRecords ? (id) => { setMovingPinId(id); setPinDropMode(true); setHint("Click on map to place pin."); } : undefined}
             onDeleteBusiness={(id) => {
               if (!canDeleteRecords) return;
               const prevList = items;

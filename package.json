@@ -8,8 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test components/**/__tests__/*.test.ts",
-    "audit:check": "node scripts/audit-check.mjs"
+    "test": "rm -rf .test-dist && tsc -p tsconfig.test.json && node --test .test-dist/middleware.test.js",
+    "audit:check": "node scripts/audit-check.mjs",
+    "verify:security": "node scripts/verify-security.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "0.10.2",

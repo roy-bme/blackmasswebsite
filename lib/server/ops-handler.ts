@@ -11,6 +11,7 @@ import type { UserRole } from "@/types/ops";
 export type WriteHandlerContext = {
   request: Request;
   user: OpsUser;
+  requestId: string;
   /** RLS-scoped client. Read queries only; writes should use service. */
   supabase: ReturnType<typeof createSupabaseServerClient>;
   /** Service-role client. Use for the actual insert/update after authz. */
@@ -18,63 +19,57 @@ export type WriteHandlerContext = {
 };
 
 export type HandlerOptions = {
-  /** Module href to check against canAccess. */
   module?: string;
-  /** Role allowlist override. Defaults to any role that canAccess allows. */
   roles?: UserRole[];
-  /** Whether to apply the global ops-API rate limit (default true). */
   rateLimit?: boolean;
 };
 
 export type HandlerResult = Response;
+
+function makeRequestId(): string {
+  return crypto.randomUUID();
+}
+
+function json(status: number, payload: unknown, requestId: string): Response {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: { "content-type": "application/json", "x-request-id": requestId },
+  });
+}
 
 export async function withOpsWrite(
   request: Request,
   opts: HandlerOptions,
   handler: (ctx: WriteHandlerContext) => Promise<HandlerResult>,
 ): Promise<HandlerResult> {
-  // 1. CSRF / origin check.
-  const csrf = assertSameOrigin(request);
-  if (csrf) return csrf;
+  const requestId = makeRequestId();
 
-  // 2. Global API rate limit.
+  const csrf = assertSameOrigin(request);
+  if (csrf) return json(403, { ok: false, error: { code: "csrf_failed" }, requestId }, requestId);
+
   if (opts.rateLimit !== false) {
     const rl = await consume("opsApi", requestIp(request));
     if (!rl.allowed) {
-      return new Response(JSON.stringify({ error: "rate_limited" }), {
-        status: 429,
-        headers: { "content-type": "application/json" },
-      });
+      return json(429, { ok: false, error: { code: "rate_limited" }, requestId }, requestId);
     }
   }
 
-  // 3. Authenticate.
   const profile = await loadOpsProfile();
   if (profile.status !== "ok") {
-    return new Response(JSON.stringify({ error: "unauthenticated" }), {
-      status: 401,
-      headers: { "content-type": "application/json" },
-    });
+    return json(401, { ok: false, error: { code: "unauthenticated" }, requestId }, requestId);
   }
 
-  // 4. Module / role authorization.
   if (opts.module && !canAccess(profile.user.role, opts.module)) {
-    return new Response(JSON.stringify({ error: "forbidden" }), {
-      status: 403,
-      headers: { "content-type": "application/json" },
-    });
+    return json(403, { ok: false, error: { code: "forbidden" }, requestId }, requestId);
   }
   if (opts.roles && !opts.roles.includes(profile.user.role)) {
-    return new Response(JSON.stringify({ error: "forbidden" }), {
-      status: 403,
-      headers: { "content-type": "application/json" },
-    });
+    return json(403, { ok: false, error: { code: "forbidden" }, requestId }, requestId);
   }
 
   const supabase = createSupabaseServerClient();
   const service = createSupabaseServiceRoleClient();
 
-  return handler({ request, user: profile.user, supabase, service });
+  return handler({ request, user: profile.user, supabase, service, requestId });
 }
 
 export async function readJson<T>(request: Request): Promise<T | null> {
@@ -85,16 +80,10 @@ export async function readJson<T>(request: Request): Promise<T | null> {
   }
 }
 
-export function jsonError(status: number, error: string) {
-  return new Response(JSON.stringify({ error }), {
-    status,
-    headers: { "content-type": "application/json" },
-  });
+export function jsonError(status: number, code: string, requestId = makeRequestId()) {
+  return json(status, { ok: false, error: { code }, requestId }, requestId);
 }
 
-export function jsonOk<T>(data: T) {
-  return new Response(JSON.stringify(data), {
-    status: 200,
-    headers: { "content-type": "application/json" },
-  });
+export function jsonOk<T>(data: T, requestId = makeRequestId()) {
+  return json(200, { ok: true, data, requestId }, requestId);
 }

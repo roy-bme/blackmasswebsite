@@ -89,6 +89,15 @@ a:focus-visible {
   cursor: crosshair;
 }
 
+/* Native <select> popups inherit the OS background, which renders white on
+   mobile browsers and clashes with the dark theme. Force a dark background +
+   white text so options stay readable. */
+select,
+select option {
+  background-color: var(--ink-800);
+  color: #ffffff;
+}
+
 /* ------------------------------------------------------------------------
  * Indaba portal utilities
  * ------------------------------------------------------------------------ */

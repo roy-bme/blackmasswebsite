@@ -234,7 +234,6 @@ export default async function MapPage() {
         canSeeIntros={canSeeIntros}
         canAddRecords={canAddRecords}
         canDeleteRecords={user.role === "admin"}
-        role={user.role}
         currentUserId={user.id}
       />
     </div>

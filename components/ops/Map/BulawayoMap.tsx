@@ -34,109 +34,6 @@ type BulawayoMapProps = {
   onOpenCandidate?: (candidateId: string) => void;
 };
 
-type ZonePolygon = {
-  name: string;
-  coordinates: [number, number][];
-  color: string;
-  // "primary"  = original 4 commercial zones (kept as-is for back-compat).
-  // "priority" = ground-ops priority 1-3 (prominent border + permanent label).
-  // "secondary"= ground-ops secondary (lighter border, hover label).
-  tier: "primary" | "priority" | "secondary";
-};
-
-function rectCoords(
-  minLat: number,
-  maxLat: number,
-  minLng: number,
-  maxLng: number,
-): [number, number][] {
-  return [
-    [maxLat, minLng],
-    [maxLat, maxLng],
-    [minLat, maxLng],
-    [minLat, minLng],
-  ];
-}
-
-// Hard-coded polygon overlays for priority zones. The `zones` table supplies
-// the id → name lookup for business pins; these shapes are kept in the client
-// for back-compat with the original 4 zones and to render the new ground-ops
-// priority zones (added 2026-05-01) regardless of whether `boundary_geojson`
-// is populated for them.
-const ZONE_POLYGONS: ZonePolygon[] = [
-  // Original 4 commercial zones — unchanged.
-  {
-    name: "CBD Core",
-    coordinates: rectCoords(-20.158, -20.144, 28.575, 28.59),
-    color: "#378ADD",
-    tier: "primary",
-  },
-  {
-    name: "Belmont Industrial",
-    coordinates: rectCoords(-20.18, -20.162, 28.558, 28.58),
-    color: "#E24B4A",
-    tier: "primary",
-  },
-  {
-    name: "Donnington",
-    coordinates: rectCoords(-20.148, -20.135, 28.545, 28.558),
-    color: "#BA7517",
-    tier: "primary",
-  },
-  {
-    name: "Kelvin",
-    coordinates: rectCoords(-20.18, -20.16, 28.528, 28.55),
-    color: "#888780",
-    tier: "primary",
-  },
-
-  // Ground-ops priority zones (priority 1-3) — prominent border + label.
-  {
-    name: "CBD / Sauce Town",
-    coordinates: rectCoords(-20.157, -20.11, 28.575, 28.6),
-    color: "#D4AF37",
-    tier: "priority",
-  },
-  {
-    name: "Nkulumane",
-    coordinates: rectCoords(-20.195, -20.17, 28.48, 28.515),
-    color: "#0F766E",
-    tier: "priority",
-  },
-  {
-    name: "Cowdray Park",
-    coordinates: rectCoords(-20.095, -20.065, 28.49, 28.53),
-    color: "#0B6BFF",
-    tier: "priority",
-  },
-
-  // Ground-ops secondary zones — lighter styling.
-  {
-    name: "Sizinda",
-    coordinates: rectCoords(-20.185, -20.16, 28.528, 28.558),
-    color: "#888780",
-    tier: "secondary",
-  },
-  {
-    name: "Njube",
-    coordinates: rectCoords(-20.145, -20.12, 28.51, 28.545),
-    color: "#888780",
-    tier: "secondary",
-  },
-  {
-    name: "Pumula",
-    coordinates: rectCoords(-20.155, -20.13, 28.465, 28.495),
-    color: "#888780",
-    tier: "secondary",
-  },
-  {
-    name: "Nketa",
-    coordinates: rectCoords(-20.215, -20.19, 28.515, 28.55),
-    color: "#888780",
-    tier: "secondary",
-  },
-];
-
 function escapeHtml(value: unknown): string {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -184,7 +81,6 @@ export default function BulawayoMap({
   const mapRef = useRef<L.Map | null>(null);
   const onMapClickRef = useRef(onMapClick);
   const layersRef = useRef<{
-    zones: L.LayerGroup;
     links: L.LayerGroup;
     businesses: L.LayerGroup;
     introductions: L.LayerGroup;
@@ -199,7 +95,7 @@ export default function BulawayoMap({
     [zones],
   );
 
-  // One-time map init + zone polygons (they never change with filters).
+  // One-time map init.
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
@@ -220,28 +116,12 @@ export default function BulawayoMap({
       },
     ).addTo(map);
 
-    const zonesLayer = L.layerGroup().addTo(map);
     const linksLayer = L.layerGroup().addTo(map);
     const businessesLayer = L.layerGroup().addTo(map);
     const introductionsLayer = L.layerGroup().addTo(map);
 
-    for (const zone of ZONE_POLYGONS) {
-      const isPriority = zone.tier === "priority";
-      const polygon = L.polygon(zone.coordinates, {
-        color: zone.color,
-        weight: isPriority ? 2.5 : 1,
-        fillColor: zone.color,
-        fillOpacity: isPriority ? 0.18 : 0.08,
-        dashArray: zone.tier === "secondary" ? "4 4" : undefined,
-      });
-
-      polygon.bindTooltip(zone.name, { sticky: true });
-      polygon.addTo(zonesLayer);
-    }
-
     mapRef.current = map;
     layersRef.current = {
-      zones: zonesLayer,
       links: linksLayer,
       businesses: businessesLayer,
       introductions: introductionsLayer,

@@ -11,7 +11,6 @@ import Textarea from "@/components/ops/ui/Textarea";
 import { opsApiPost } from "@/lib/ops/api-client";
 import { formatCoords, reverseGeocode } from "@/lib/ops/reverse-geocode";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
-import { getZoneBounds, pointInBounds } from "@/lib/ops/zone-bounds";
 
 import type { MapZone } from "./types";
 
@@ -84,24 +83,6 @@ export default function AddBusinessDialog({
     setError(null);
     setAddress(null);
   }, [open, lastSector]);
-
-  // Auto-resolve zone_id via point-in-bounds whenever coords change.
-  useEffect(() => {
-    if (!open || !coords) return;
-    for (const zone of zones) {
-      const bounds = getZoneBounds({
-        name: zone.name,
-        centre_lat: zone.centre_lat,
-        centre_lng: zone.centre_lng,
-      });
-      if (bounds && pointInBounds(coords, bounds)) {
-        setForm((prev) =>
-          prev.zone_id ? prev : { ...prev, zone_id: zone.id },
-        );
-        return;
-      }
-    }
-  }, [open, coords, zones]);
 
   useEffect(() => {
     if (!open || !coords) {

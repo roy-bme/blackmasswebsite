@@ -12,7 +12,6 @@ import Textarea from "@/components/ops/ui/Textarea";
 import Button from "@/components/ops/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { opsApiPost } from "@/lib/ops/api-client";
-import type { UserRole } from "@/types/ops";
 
 import AddBusinessDialog from "./AddBusinessDialog";
 import LogInteractionModal from "@/components/ops/Interactions/LogInteractionModal";
@@ -37,7 +36,6 @@ type MapViewProps = {
   canSeeIntros: boolean;
   canAddRecords: boolean;
   canDeleteRecords: boolean;
-  role: UserRole;
   currentUserId: string;
 };
 
@@ -50,7 +48,6 @@ export default function MapView({
   canSeeIntros,
   canAddRecords,
   canDeleteRecords,
-  role,
   currentUserId,
 }: MapViewProps) {
   const toast = useToast();
@@ -306,7 +303,7 @@ export default function MapView({
             ))}
             <Textarea value={form.notes ?? ""} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} rows={4} />
           </div>
-          {role !== "bd" ? <div className="mt-3 flex gap-2"><Button size="sm" variant="primary" onClick={async () => {
+          <div className="mt-3 flex gap-2"><Button size="sm" variant="primary" onClick={async () => {
             if (!selected) return;
             const patch = { name: form.name.trim(), sector: form.sector as MapBusiness["sector"], notes: form.notes?.trim() || null, est_monthly_volume: form.est_monthly_volume ? Number(form.est_monthly_volume) : null, zone_id: form.zone_id || null, decision_maker_name: form.decision_maker_name?.trim() || null, decision_maker_title: form.decision_maker_title?.trim() || null, phone: form.phone?.trim() || null, email: form.email?.trim() || null, linkedin: form.linkedin?.trim() || null, key_suppliers: (form.key_suppliers || "").split(",").map((s) => s.trim()).filter(Boolean), key_customers: (form.key_customers || "").split(",").map((s) => s.trim()).filter(Boolean), pain_points: (form.pain_points || "").split(",").map((s) => s.trim()).filter(Boolean), zimx_fit_score: form.zimx_fit_score ? Number(form.zimx_fit_score) : null };
             const res = await opsApiPost("/api/ops/businesses/update", { id: selected.id, patch });
@@ -314,7 +311,7 @@ export default function MapView({
             setItems((prev) => prev.map((b) => (b.id === selected.id ? { ...b, ...patch } : b)));
             toast.success("Business updated.");
             setSelected(null);
-          }}>Save</Button><Button size="sm" variant="ghost" onClick={() => setSelected(null)}>Cancel</Button></div> : null}
+          }}>Save</Button><Button size="sm" variant="ghost" onClick={() => setSelected(null)}>Cancel</Button></div>
         </div>
       ) : null}
       {interactionBusinessId ? <LogInteractionModal businessId={interactionBusinessId} businessName={items.find((b) => b.id === interactionBusinessId)?.name ?? "Business"} onClose={() => setInteractionBusinessId(null)} onSaved={() => {}} /> : null}

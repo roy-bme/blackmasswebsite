@@ -28,7 +28,7 @@ const CSP = [
   `img-src 'self' data: https://${STORAGE_HOST} https://*.basemaps.cartocdn.com https://*.openstreetmap.org`,
   `connect-src 'self' https://${STORAGE_HOST} https://nominatim.openstreetmap.org`,
   "script-src 'self' 'nonce-NONCE_PLACEHOLDER' 'strict-dynamic'",
-  "style-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline' https://unpkg.com",
   "font-src 'self' data:",
   "frame-ancestors 'none'",
   "base-uri 'none'",

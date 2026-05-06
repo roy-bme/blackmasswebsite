@@ -48,8 +48,8 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/indaba/map",
     label: "Map",
     icon: "map",
-    roles: ["admin", "ops"],
-    mobileRoles: ["admin", "ops"],
+    roles: ["admin", "ops", "bd"],
+    mobileRoles: ["admin", "ops", "bd"],
   },
   {
     id: "directory",

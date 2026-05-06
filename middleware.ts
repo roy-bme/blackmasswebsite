@@ -6,6 +6,7 @@ import {
   isMarketingHost,
   isUnknownHost,
 } from "@/lib/ops/host-allowlist";
+import { resolveRouteMode } from "@/lib/ops/route-mode";
 
 /**
  * Hostname-based router + Supabase session refresh + CSP nonce injection.
@@ -65,6 +66,7 @@ function applyCspNonce(response: NextResponse, nonce: string) {
   response.headers.set("x-nonce", nonce);
 }
 
+
 export async function middleware(request: NextRequest) {
   const host = request.headers.get("host");
   const { pathname } = request.nextUrl;
@@ -78,9 +80,11 @@ export async function middleware(request: NextRequest) {
     console.warn("unknown host", { host, pathname });
   }
 
-  if (!onIndabaHost) {
+  const routeMode = resolveRouteMode(host, pathname);
+
+  if (routeMode !== "indaba") {
     // Marketing (or unknown) host: hide the portal surface entirely.
-    if (pathname === INDABA_PATH_PREFIX || pathname.startsWith(`${INDABA_PATH_PREFIX}/`)) {
+    if (routeMode === "block_portal") {
       return new NextResponse("Not Found", { status: 404 });
     }
     // Forward the nonce into the request headers so server components can

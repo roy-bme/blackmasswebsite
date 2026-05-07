@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import Card from "@/components/ops/ui/Card";
 import Eyebrow from "@/components/ops/ui/Eyebrow";
@@ -71,6 +71,60 @@ export default function MapView({
   const [showCandidates, setShowCandidates] = useState(true);
   const [selectedCandidate, setSelectedCandidate] = useState<MapDiscoveryCandidate | null>(null);
   const [reviewNotes, setReviewNotes] = useState("");
+  const [activeBusinessId, setActiveBusinessId] = useState<string | null>(null);
+  const [flyToTarget, setFlyToTarget] = useState<{ lat: number; lng: number; key: number } | null>(null);
+  const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  const BRENDON_UUID = "b15b3634-51b4-493a-a80b-662f219164ca";
+  const TAFADZWA_UUID = "458fc192-05a2-472b-9ade-c22cd16ad0e3";
+  const ROY_UUID = "fb29427f-8ed4-4cb2-8ed8-7d134d3a960f";
+
+  const visibleByOwner = useCallback(
+    (b: MapBusiness) => {
+      const isTafadzwa = b.mapped_by === TAFADZWA_UUID;
+      const isBrendon = b.mapped_by === BRENDON_UUID;
+      const isUnattributed = b.mapped_by == null || b.mapped_by === ROY_UUID;
+      if (isTafadzwa && !showTafadzwa) return false;
+      if (isBrendon && !showBrendon) return false;
+      if (isUnattributed && !showUnattributed) return false;
+      return true;
+    },
+    [showBrendon, showTafadzwa, showUnattributed],
+  );
+
+  const recentlyAdded = useMemo(() => {
+    return items
+      .filter(visibleByOwner)
+      .slice()
+      .sort((a, b) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0))
+      .slice(0, 5);
+  }, [items, visibleByOwner]);
+
+  const sidebarList = useMemo(() => {
+    if (!activeBusinessId) return recentlyAdded;
+    if (recentlyAdded.some((b) => b.id === activeBusinessId)) return recentlyAdded;
+    const active = items.find((b) => b.id === activeBusinessId);
+    if (!active) return recentlyAdded;
+    return [active, ...recentlyAdded];
+  }, [activeBusinessId, items, recentlyAdded]);
+
+  useEffect(() => {
+    if (!activeBusinessId) return;
+    const node = cardRefs.current[activeBusinessId];
+    if (node) node.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [activeBusinessId]);
+
+  const handleSelectFromCard = useCallback(
+    (b: MapBusiness) => {
+      setActiveBusinessId(b.id);
+      setFlyToTarget((prev) => ({ lat: b.lat, lng: b.lng, key: (prev?.key ?? 0) + 1 }));
+    },
+    [],
+  );
+
+  const handleSelectFromPin = useCallback((businessId: string) => {
+    setActiveBusinessId(businessId);
+  }, []);
 
   const handleMapClick = useCallback(
     (coords: { lat: number; lng: number }) => {
@@ -206,6 +260,8 @@ export default function MapView({
               })();
             }}
             onLogInteraction={(id) => setInteractionBusinessId(id)}
+            onSelectBusiness={handleSelectFromPin}
+            flyToTarget={flyToTarget}
             showCandidates={showCandidates}
             onOpenCandidate={(id) => setSelectedCandidate(discoveryCandidates.find((c) => c.id === id) ?? null)}
           />
@@ -242,27 +298,42 @@ export default function MapView({
             </p>
           </Card>
 
-          {items.slice(0, 5).map((b) => (
-            <Card key={b.id} padding="md" interactive>
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="truncate text-[14px] font-medium text-white">
-                    {b.name}
+          {sidebarList.length > 0 ? (
+            <Eyebrow className="mt-1 px-1">recently added</Eyebrow>
+          ) : null}
+          {sidebarList.map((b) => {
+            const isActive = b.id === activeBusinessId;
+            return (
+              <Card
+                key={b.id}
+                padding="md"
+                interactive
+                accent={isActive ? "gold" : undefined}
+                ref={(node) => {
+                  cardRefs.current[b.id] = node;
+                }}
+                onClick={() => handleSelectFromCard(b)}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="truncate text-[14px] font-medium text-white">
+                      {b.name}
+                    </div>
+                    <div className="mt-1 flex items-center gap-1.5">
+                      <span className="inline-block h-2.5 w-2.5" style={{ backgroundColor: b.mapped_by === TAFADZWA_UUID ? "#D4A843" : "#319B42" }} />
+                      <span className="font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
+                        {b.sector}
+                        {b.est_monthly_volume
+                          ? ` · $${Number(b.est_monthly_volume).toLocaleString()}/mo`
+                          : ""}
+                      </span>
+                    </div>
                   </div>
-                  <div className="mt-1 flex items-center gap-1.5">
-                    <span className="inline-block h-2.5 w-2.5" style={{ backgroundColor: b.mapped_by === "458fc192-05a2-472b-9ade-c22cd16ad0e3" ? "#D4A843" : "#319B42" }} />
-                    <span className="font-mono text-[10px] uppercase tracking-eyebrow text-fg-mute">
-                      {b.sector}
-                      {b.est_monthly_volume
-                        ? ` · $${Number(b.est_monthly_volume).toLocaleString()}/mo`
-                        : ""}
-                    </span>
-                  </div>
+                  {b.launch_6 ? <Pill tone="gold">L6</Pill> : null}
                 </div>
-                {b.launch_6 ? <Pill tone="gold">L6</Pill> : null}
-              </div>
-            </Card>
-          ))}
+              </Card>
+            );
+          })}
           {items.length === 0 ? (
             <EmptyState
               title="No businesses mapped yet."

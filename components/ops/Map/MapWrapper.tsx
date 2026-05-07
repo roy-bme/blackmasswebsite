@@ -37,8 +37,10 @@ type MapWrapperProps = {
   onMoveBusiness?: (businessId: string) => void;
   onDeleteBusiness?: (businessId: string) => void;
   onLogInteraction?: (businessId: string) => void;
+  onSelectBusiness?: (businessId: string) => void;
   showCandidates?: boolean;
   onOpenCandidate?: (candidateId: string) => void;
+  flyToTarget?: { lat: number; lng: number; key: number } | null;
 };
 
 export default function MapWrapper(props: MapWrapperProps) {

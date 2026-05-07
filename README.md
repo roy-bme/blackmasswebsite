@@ -6,7 +6,7 @@ Blackmass corporate site + `indaba.zimx.io` internal ops portal, built on Next.j
 
 ```bash
 npm install
-cp .env.local.example .env.local   # then fill in the Supabase + Upstash keys
+cp .env.local.example .env.local   # then fill in the required env vars
 npm run dev
 ```
 
@@ -27,10 +27,6 @@ See `.env.local.example` for the full list.
 
 ### Security env vars (added by the 2026-04 hardening pass)
 
-- `UPSTASH_REDIS_REST_URL` — Upstash Redis REST URL for edge rate limiting.
-  Optional in dev; **required in prod**. Without it the rate limiters
-  degrade open (allow all).
-- `UPSTASH_REDIS_REST_TOKEN` — matching Upstash token.
 - `HEALTH_CHECK_TOKEN` — any opaque random string. `GET /api/ops/health`
   returns 403 unless the request carries `X-Health-Token: <value>`.
 
@@ -59,15 +55,12 @@ GitHub settings before the hardening pass is considered deployed:
    `CHANGES.md`.
 4. **GitHub → Settings → Code security and analysis** — enable **Secret
    scanning** and **Push protection** on `roy-bme/blackmasswebsite`.
-5. **Upstash → create a Redis database** — copy the REST URL + token to
-   Vercel project env vars as `UPSTASH_REDIS_REST_URL` and
-   `UPSTASH_REDIS_REST_TOKEN`.
-6. **Vercel → Environment Variables** — set `HEALTH_CHECK_TOKEN` to a
+5. **Vercel → Environment Variables** — set `HEALTH_CHECK_TOKEN` to a
    fresh random value and wire it into the uptime monitor.
-7. **`npm update`** — run locally after cloning to pull Next 14.2.35+
-   and the Upstash SDKs into `node_modules`; commit the refreshed
+6. **`npm update`** — run locally after cloning to pull Next 14.2.35+
+   into `node_modules`; commit the refreshed
    `package-lock.json` if your environment differs.
-8. **Basemap provider** — we still load Carto tiles with lat/lng in the
+7. **Basemap provider** — we still load Carto tiles with lat/lng in the
    URL. Acceptable given internal-only usage; follow-up item to host
    tiles ourselves if we expand to customer-facing map surfaces.
 

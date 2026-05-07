@@ -2,7 +2,6 @@ import { NextResponse, type NextRequest } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
-import { consume, requestIp } from "@/lib/ratelimit";
 import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/supabase/env";
 
 const ALLOWED_NEXT = new Set<string>(["/auth/reset-password"]);
@@ -32,12 +31,6 @@ export async function GET(request: NextRequest) {
     );
   }
 
-  const rl = await consume("authCallback", requestIp(request));
-  if (!rl.allowed) {
-    return NextResponse.redirect(
-      new URL("/auth/auth-error?reason=rate_limited", url.origin),
-    );
-  }
 
   const cookieStore = cookies();
   const response = NextResponse.redirect(new URL(next, url.origin));

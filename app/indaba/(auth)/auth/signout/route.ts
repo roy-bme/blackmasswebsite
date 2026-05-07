@@ -4,7 +4,6 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
 import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/supabase/env";
 import { assertSameOrigin } from "@/lib/ops/csrf";
-import { consume, requestIp } from "@/lib/ratelimit";
 
 /**
  * Sign-out endpoint. POST-only with a same-origin check to prevent CSRF
@@ -15,10 +14,6 @@ export async function POST(request: NextRequest) {
   const csrf = assertSameOrigin(request);
   if (csrf) return csrf;
 
-  const rl = await consume("signout", requestIp(request));
-  if (!rl.allowed) {
-    return new NextResponse("too many requests", { status: 429 });
-  }
 
   const url = new URL(request.url);
   const cookieStore = cookies();

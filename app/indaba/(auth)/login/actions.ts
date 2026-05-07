@@ -1,20 +1,18 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
 import { tokenFromSupabaseError } from "@/lib/ops/auth-error";
 import { safeNext } from "@/lib/ops/next-param";
-import { consume, requestIp } from "@/lib/ratelimit";
 import { getSupabaseAnonKey, getSupabaseUrl } from "@/lib/supabase/env";
 import { createSupabaseServiceRoleClient } from "@/lib/supabase/service";
 
 /**
  * Email + password sign-in server action.
  *
- * Replaces the prior magic-link flow. Rate-limited per IP and per email,
+ * Replaces the prior magic-link flow.
  * verifies the user is provisioned + active, and writes Supabase auth cookies
  * before redirecting to the validated `next` path.
  */
@@ -27,21 +25,6 @@ export async function signInWithPassword(formData: FormData): Promise<void> {
     redirect(`/login?error=invalid_credentials&next=${encodeURIComponent(next)}`);
   }
 
-  // Rate limit by IP + email — both must be under quota.
-  const hdrs = headers();
-  const ip = requestIp(
-    new Request("https://indaba.zimx.io/login", {
-      headers: hdrs,
-    }),
-  );
-
-  const [ipRl, emailRl] = await Promise.all([
-    consume("signInIp", ip),
-    consume("signInEmail", email),
-  ]);
-  if (!ipRl.allowed || !emailRl.allowed) {
-    redirect(`/login?error=rate_limited&next=${encodeURIComponent(next)}`);
-  }
 
   const cookieStore = cookies();
   const supabase = createServerClient(getSupabaseUrl(), getSupabaseAnonKey(), {

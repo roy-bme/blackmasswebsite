@@ -131,6 +131,12 @@ export default async function DashboardPage({
   const isBd = user.role === "bd";
   const isCompliance = user.role === "compliance";
 
+  const hour = new Date().getHours();
+  const timeOfDay =
+    hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const firstName = user.name.split(" ")[0] ?? user.name;
+  const greeting = `${timeOfDay}, ${firstName}`;
+
   return (
     <div>
       {flash ? (

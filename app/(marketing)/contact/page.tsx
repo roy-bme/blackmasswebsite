@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 const socials = [
   { label: "X", handle: "@Roy_BME", href: "https://x.com/Roy_BME" },
-  { label: "LinkedIn", handle: "Emperor Roy", href: "#" }, // TODO: final LinkedIn URL
+  { label: "LinkedIn", handle: "Emperor Roy", href: "https://www.linkedin.com/in/emperor-roy/" },
   {
     label: "Instagram",
     handle: "@Roy_BME",

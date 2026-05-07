@@ -25,7 +25,6 @@ const ALLOWED_COLUMNS = new Set<string>([
   "key_customers",
   "pain_points",
   "zimx_fit_score",
-  "launch_6",
   "photos",
   "onboarding_stage",
   "active",
@@ -33,7 +32,7 @@ const ALLOWED_COLUMNS = new Set<string>([
   "lng",
 ]);
 
-const ADMIN_ONLY_COLUMNS = new Set<string>(["launch_6"]);
+const ADMIN_ONLY_COLUMNS = new Set<string>([]);
 
 export async function POST(request: Request) {
   return withOpsWrite(

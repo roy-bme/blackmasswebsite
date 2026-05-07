@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { getSectorHex } from "@/lib/ops/sector-colors";
 import type { Business, SupplyChainLink } from "@/types/ops";
 
-type BizLite = Pick<Business, "id" | "name" | "sector" | "launch_6">;
+type BizLite = Pick<Business, "id" | "name" | "sector">;
 
 type Pos = { x: number; y: number; b: BizLite };
 

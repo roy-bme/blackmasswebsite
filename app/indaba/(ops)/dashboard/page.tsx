@@ -63,7 +63,7 @@ export default async function DashboardPage({
   ] = await Promise.all([
     supabase
       .from("businesses")
-      .select("id, name, sector, onboarding_stage, launch_6"),
+      .select("id, name, sector, onboarding_stage"),
     supabase
       .from("supply_chain_links")
       .select("id", { count: "exact", head: true }),
@@ -108,7 +108,7 @@ export default async function DashboardPage({
 
   const businesses = (businessesRes.data ?? []) as Pick<
     Business,
-    "id" | "name" | "sector" | "onboarding_stage" | "launch_6"
+    "id" | "name" | "sector" | "onboarding_stage"
   >[];
 
   const stageCounts = STAGE_ORDER.reduce<Record<BusinessStage, number>>(
@@ -119,20 +119,6 @@ export default async function DashboardPage({
     stageCounts[b.onboarding_stage] = (stageCounts[b.onboarding_stage] ?? 0) + 1;
   }
   const total = businesses.length;
-  const launch6Done = businesses.filter(
-    (b) => b.launch_6 && b.onboarding_stage === "onboarded",
-  ).length;
-  const linkCount = linksRes.count ?? 0;
-  const eventsUpcoming = eventsUpcomingRes.count ?? 0;
-  const intros =
-    "data" in introsRes && Array.isArray(introsRes.data) ? introsRes.data : [];
-  const introsPending = intros.filter((i) => !i.roy_approved).length;
-  const runs = (agentRunsRes.data ?? []) as AgentRun[];
-  const brief = briefRes.data as Pick<AgentBrief, "markdown" | "created_at"> | null;
-  const flags = (flagsRes.data ?? []) as ComplianceFlag[];
-  const regSignals = (regSignalsRes.data ?? []) as RegulatorySignal[];
-
-  const greeting = greetingFor(user.name, user.role);
   const today = new Intl.DateTimeFormat("en-GB", {
     weekday: "long",
     day: "2-digit",
@@ -179,7 +165,6 @@ export default async function DashboardPage({
       <div className="px-4 py-5 md:px-6">
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
           <Metric label="Businesses" value={String(total)} sub={`+${stageCounts.identified} new`} />
-          <Metric label="Launch 6" value={`${launch6Done}/6`} sub="onboarded" gold />
           <Metric label="Supply links" value={String(linkCount)} sub="" />
           {(isAdmin || isBd) ? (
             <Metric

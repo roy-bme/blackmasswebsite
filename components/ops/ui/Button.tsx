@@ -30,7 +30,6 @@ const VARIANTS: Record<ButtonVariant, string> = {
   // Gold primary — main calls to action throughout the portal.
   primary:
     "bg-zimx-gold text-[#1a1612] border border-zimx-gold hover:bg-zimx-gold-muted hover:border-zimx-gold-muted",
-  // High-contrast white — used for "L6" tags and inverted CTAs.
   solid:
     "bg-white text-ink-700 border border-white hover:bg-white/90",
   // Ghost = transparent with hairline border. The default cool action.

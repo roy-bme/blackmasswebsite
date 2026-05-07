@@ -170,8 +170,8 @@ export default function BulawayoMap({
 
         const fillColor = isTafadzwa || isUnattributed ? "#D4A843" : "#319B42";
         const fillOpacity = isUnattributed ? 0.15 : 0.85;
-        const strokeColor = b.launch_6 ? "#D4AF37" : (isTafadzwa || isUnattributed ? "#9E7A21" : "#236F30");
-        const strokeWeight = b.launch_6 ? 3 : 1;
+        const strokeColor = isTafadzwa || isUnattributed ? "#9E7A21" : "#236F30";
+        const strokeWeight = 1;
         const dashArray = isUnattributed ? "4,4" : undefined;
         const zoneName = b.zone_id ? zoneNameById.get(b.zone_id) ?? "—" : "—";
         const notes =

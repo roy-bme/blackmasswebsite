@@ -10,7 +10,6 @@ type Body = {
   address?: string | null;
   est_monthly_volume?: number | null;
   notes?: string | null;
-  launch_6?: boolean;
 };
 
 export async function POST(request: Request) {
@@ -41,7 +40,6 @@ export async function POST(request: Request) {
           est_monthly_volume: body.est_monthly_volume ?? null,
           notes: body.notes ?? null,
           mapped_by: user.id,
-          launch_6: Boolean(body.launch_6),
           onboarding_stage: "identified",
         })
         .select("id")

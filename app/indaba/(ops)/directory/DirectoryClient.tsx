@@ -35,7 +35,7 @@ const LANES: Array<{ id: BusinessStage | "suggested"; label: string; isAgent?: b
 const STAGE_ORDER = ["identified", "intel_gathered", "intro_made", "meeting_set", "meeting_done", "loi_signed", "onboarded"] as const;
 
 type BizLite = {
-  id: string; name: string; sector: string; onboarding_stage: BusinessStage; launch_6: boolean; address: string | null;
+  id: string; name: string; sector: string; onboarding_stage: BusinessStage; address: string | null;
   zone_id: string | null; est_monthly_volume: number | null; notes: string | null; mapped_by: string | null; created_at: string;
   decision_maker_name: string | null; decision_maker_title: string | null; phone: string | null; email: string | null; linkedin: string | null;
   key_suppliers: string[] | null; key_customers: string[] | null; pain_points: string[] | null; zimx_fit_score: number | null;
@@ -70,7 +70,6 @@ export default function DirectoryClient({ suggested, zones, users, role }: { sug
   const [distinctSectors, setDistinctSectors] = useState<string[]>([]);
   const [sectorFilter, setSectorFilter] = useState<string | null>(null);
   const [zoneFilter, setZoneFilter] = useState<string | null>(null);
-  const [launch6Only, setLaunch6Only] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [isLoadingBusinesses, setIsLoadingBusinesses] = useState(true);
   const [selected, setSelected] = useState<BizLite | null>(null);
@@ -90,7 +89,7 @@ export default function DirectoryClient({ suggested, zones, users, role }: { sug
       const [{ data: businessData }, { data: zonesData }, { data: sectorData }] = await Promise.all([
         supabase
           .from("businesses")
-          .select("id, name, sector, onboarding_stage, launch_6, address, zone_id, est_monthly_volume, notes, mapped_by, created_at, decision_maker_name, decision_maker_title, phone, email, linkedin, key_suppliers, key_customers, pain_points, zimx_fit_score")
+          .select("id, name, sector, onboarding_stage, address, zone_id, est_monthly_volume, notes, mapped_by, created_at, decision_maker_name, decision_maker_title, phone, email, linkedin, key_suppliers, key_customers, pain_points, zimx_fit_score")
           .order("name"),
         supabase.from("zones").select("id, name").order("name"),
         supabase.from("businesses").select("sector").not("sector", "is", null),
@@ -112,8 +111,7 @@ export default function DirectoryClient({ suggested, zones, users, role }: { sug
 
   const filteredBusinesses = useMemo(() => businesses
     .filter((b) => !sectorFilter || b.sector === sectorFilter)
-    .filter((b) => !zoneFilter || b.zone_id === zoneFilter)
-    .filter((b) => !launch6Only || b.launch_6 === true), [businesses, sectorFilter, zoneFilter, launch6Only]);
+    .filter((b) => !zoneFilter || b.zone_id === zoneFilter), [businesses, sectorFilter, zoneFilter]);
 
 
   const byLane = useMemo(() => {
@@ -227,8 +225,7 @@ export default function DirectoryClient({ suggested, zones, users, role }: { sug
         <option value="">All zones</option>
         {zoneOptions.map((z) => <option key={z.id} value={z.id}>{z.name}</option>)}
       </select>
-      <Button variant={launch6Only ? "primary" : "ghost"} size="sm" onClick={() => setLaunch6Only((prev) => !prev)}>Launch 6</Button>
-      <button className="text-xs text-fg-mute underline" onClick={() => { setSectorFilter(null); setZoneFilter(null); setLaunch6Only(false); }}>Clear filters</button>
+      <button className="text-xs text-fg-mute underline" onClick={() => { setSectorFilter(null); setZoneFilter(null); }}>Clear filters</button>
       <Button variant="primary" size="sm" onClick={() => setShowAddDialog(true)}>+ Add</Button>
     </>} />
 
@@ -276,7 +273,7 @@ function Field({label, value}:{label:string; value:React.ReactNode}) { return <d
 
 function BizCard({ b, onClick, onPromote, canDrag, laneId }: { b: BizLite; onClick: () => void; onPromote: () => void; canDrag: boolean; laneId: BusinessStage | "suggested" }) {
   const sectorHex = getSectorHex(b.sector as any);
-  return <Card draggable={canDrag && laneId !== "suggested"} onDragStart={canDrag && laneId !== "suggested" ? (e)=>{e.dataTransfer.setData("businessId", b.id);e.currentTarget.style.opacity="0.5";} : undefined} onDragEnd={canDrag && laneId !== "suggested" ? (e)=>{e.currentTarget.style.opacity="1";} : undefined} className={`mb-1.5 cursor-pointer border border-line-10 bg-ink-700 p-2.5 ${canDrag && laneId !== "suggested" ? "cursor-grab" : ""}`} style={{ borderLeft: `2px solid ${sectorHex}` }} onClick={onClick}><div className="flex items-start justify-between gap-2"><div className="min-w-0"><div className="text-[13px] font-medium leading-snug text-white">{b.name}</div><div className="mt-1 font-mono text-[9px] uppercase tracking-eyebrow text-fg-mute">{b.sector} · {b.address ?? "—"}</div></div>{b.launch_6 ? <Pill tone="solid" size="sm">L6</Pill> : null}</div><div className="mt-2 flex justify-end"><Button variant="primary" size="sm" className="text-[9px]" disabled={b.onboarding_stage === "onboarded"} onClick={(e)=>{e.stopPropagation();onPromote();}}>Promote</Button></div></Card>;
+  return <Card draggable={canDrag && laneId !== "suggested"} onDragStart={canDrag && laneId !== "suggested" ? (e)=>{e.dataTransfer.setData("businessId", b.id);e.currentTarget.style.opacity="0.5";} : undefined} onDragEnd={canDrag && laneId !== "suggested" ? (e)=>{e.currentTarget.style.opacity="1";} : undefined} className={`mb-1.5 cursor-pointer border border-line-10 bg-ink-700 p-2.5 ${canDrag && laneId !== "suggested" ? "cursor-grab" : ""}`} style={{ borderLeft: `2px solid ${sectorHex}` }} onClick={onClick}><div className="flex items-start justify-between gap-2"><div className="min-w-0"><div className="text-[13px] font-medium leading-snug text-white">{b.name}</div><div className="mt-1 font-mono text-[9px] uppercase tracking-eyebrow text-fg-mute">{b.sector} · {b.address ?? "—"}</div></div></div><div className="mt-2 flex justify-end"><Button variant="primary" size="sm" className="text-[9px]" disabled={b.onboarding_stage === "onboarded"} onClick={(e)=>{e.stopPropagation();onPromote();}}>Promote</Button></div></Card>;
 }
 
 function SuggestedCard({ c }: { c: DiscoveryCandidate }) { return <div className="mb-1.5 border border-zimx-gold/25 bg-ink-700 p-2.5" style={{ borderLeft: `2px solid ${getSectorHex(c.sector ?? "manufacturing")}` }}><div className="text-[13px] font-medium leading-snug text-white">{c.name}</div><div className="mt-1 font-mono text-[9px] uppercase tracking-eyebrow text-fg-mute">agent · {c.source}</div></div>; }

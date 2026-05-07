@@ -119,6 +119,15 @@ export default async function DashboardPage({
     stageCounts[b.onboarding_stage] = (stageCounts[b.onboarding_stage] ?? 0) + 1;
   }
   const total = businesses.length;
+  const linkCount = linksRes.count ?? 0;
+  const eventsUpcoming = eventsUpcomingRes.count ?? 0;
+  const intros =
+    "data" in introsRes && Array.isArray(introsRes.data) ? introsRes.data : [];
+  const introsPending = intros.filter((i) => !i.roy_approved).length;
+  const runs = (agentRunsRes.data ?? []) as AgentRun[];
+  const brief = briefRes.data as Pick<AgentBrief, "markdown" | "created_at"> | null;
+  const flags = (flagsRes.data ?? []) as ComplianceFlag[];
+  const regSignals = (regSignalsRes.data ?? []) as RegulatorySignal[];
   const today = new Intl.DateTimeFormat("en-GB", {
     weekday: "long",
     day: "2-digit",

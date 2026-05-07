@@ -5,7 +5,6 @@ import { createSupabaseServiceRoleClient } from "@/lib/supabase/service";
 import { loadOpsProfile, type OpsUser } from "@/lib/ops/auth";
 import { canAccess } from "@/lib/ops/nav";
 import { assertSameOrigin } from "@/lib/ops/csrf";
-import { consume, requestIp } from "@/lib/ratelimit";
 import type { UserRole } from "@/types/ops";
 
 export type WriteHandlerContext = {
@@ -47,12 +46,6 @@ export async function withOpsWrite(
   const csrf = assertSameOrigin(request);
   if (csrf) return json(403, { ok: false, error: { code: "csrf_failed" }, requestId }, requestId);
 
-  if (opts.rateLimit !== false) {
-    const rl = await consume("opsApi", requestIp(request));
-    if (!rl.allowed) {
-      return json(429, { ok: false, error: { code: "rate_limited" }, requestId }, requestId);
-    }
-  }
 
   const profile = await loadOpsProfile();
   if (profile.status !== "ok") {

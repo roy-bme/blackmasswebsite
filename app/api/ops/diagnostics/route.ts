@@ -19,7 +19,6 @@ export async function GET() {
     data: {
       nodeEnv: process.env.NODE_ENV ?? "unknown",
       missingEnv: missing,
-      upstashConfigured: Boolean(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN),
     },
   });
 }

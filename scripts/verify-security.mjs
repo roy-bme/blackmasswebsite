@@ -13,12 +13,5 @@ if (missing.length > 0) {
   process.exit(1);
 }
 
-if (process.env.NODE_ENV === "production") {
-  const upstash = ["UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN"].filter((k) => !process.env[k]);
-  if (upstash.length > 0) {
-    console.error("Production requires Upstash env vars:", upstash.join(", "));
-    process.exit(1);
-  }
-}
 
 console.log("Security config verification passed.");

@@ -1,6 +1,5 @@
 import { loadOpsProfile } from "@/lib/ops/auth";
 import { assertSameOrigin } from "@/lib/ops/csrf";
-import { consume, requestIp } from "@/lib/ratelimit";
 
 /**
  * Server-side proxy for Nominatim reverse-geocode lookups.
@@ -10,9 +9,7 @@ import { consume, requestIp } from "@/lib/ratelimit";
  * handler means:
  *   1. The browser never talks to Nominatim directly.
  *   2. We can set the policy-required descriptive User-Agent.
- *   3. We cap the rate so one staff member's rapid-drop session can't
- *      exhaust Nominatim's public budget for everyone.
- *   4. Only authenticated ops can hit it.
+ *   3. Only authenticated ops can hit it.
  */
 
 const NOMINATIM_ENDPOINT = "https://nominatim.openstreetmap.org/reverse";
@@ -22,13 +19,6 @@ export async function GET(request: Request) {
   const csrf = assertSameOrigin(request);
   if (csrf) return csrf;
 
-  const rl = await consume("geocode", requestIp(request));
-  if (!rl.allowed) {
-    return new Response(JSON.stringify({ error: "rate_limited" }), {
-      status: 429,
-      headers: { "content-type": "application/json" },
-    });
-  }
 
   const profile = await loadOpsProfile();
   if (profile.status !== "ok") {
@@ -61,7 +51,6 @@ export async function GET(request: Request) {
   try {
     const res = await fetch(upstream, {
       headers: { Accept: "application/json", "User-Agent": USER_AGENT },
-      // Nominatim permits ~1 req/sec; our edge limiter enforces that.
       next: { revalidate: 3600 },
     });
     if (!res.ok) {

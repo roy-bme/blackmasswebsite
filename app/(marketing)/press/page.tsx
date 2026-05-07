@@ -15,37 +15,36 @@ export const metadata: Metadata = {
   alternates: { canonical: "/press" },
 };
 
-// TODO: Replace placeholder links once final press URLs are confirmed.
 const pressItems = [
   {
-    publication: "AP News",
-    headline: "ZimX Finance coverage",
-    href: "#", // TODO: final AP News link
+    publication: "TechBullion",
+    headline: "A New Player in African Fintech Is Rising — And He's Zimbabwean",
+    href: "https://techbullion.com/a-new-player-in-african-fintech-is-rising-and-hes-zimbabwean/",
   },
   {
     publication: "TechBullion",
-    headline: "Feature article",
-    href: "#", // TODO: final TechBullion link
+    headline: "From Great Zimbabwe to the Digital Age: The Return of Emps Roy",
+    href: "https://techbullion.com/from-great-zimbabwe-to-the-digital-age-the-return-of-emps-roy/",
   },
   {
-    publication: "Yahoo Finance",
-    headline: "Syndicated coverage",
-    href: "#", // TODO: final Yahoo Finance link
+    publication: "Digital Journal",
+    headline: "ZimX Finance to Represent Zimbabwe at Web Summit Lisbon 2025",
+    href: "https://www.digitaljournal.com/pr/news/indnewswire/zimx-finance-represent-zimbabwe-web-183011404.html",
   },
   {
-    publication: "Business Insider Africa",
-    headline: "Feature",
-    href: "#", // TODO: final Business Insider Africa link
+    publication: "Digital Journal",
+    headline: "Emperor Roy Mupoto Honoured with Dual Awards at UK-Zimbabwe Business Expo 2025",
+    href: "https://www.digitaljournal.com/pr/news/indnewswire/emperor-roy-mupoto-honoured-dual-1568435384.html",
   },
   {
-    publication: "Benzinga",
-    headline: "Coverage",
-    href: "#", // TODO: final Benzinga link
+    publication: "IPS News",
+    headline: "ZimX Finance Heads to Web Summit Alpha",
+    href: "https://ipsnews.net/business/2025/10/06/zimx-finance-heads-to-web-summit-alpha-bridging-diaspora-capital-and-digital-infrastructure/",
   },
   {
-    publication: "Web Summit Lisbon 2025",
-    headline: "Represented Zimbabwe",
-    href: "#", // TODO: final Web Summit link
+    publication: "OpenPR",
+    headline: "ZimX Finance Launches ZiRA, a Purpose-Built AI Assistant for Zimbabweans",
+    href: "https://www.openpr.com/news/4408297/zimx-finance-launches-zira-a-purpose-built-ai-assistant",
   },
 ];
 

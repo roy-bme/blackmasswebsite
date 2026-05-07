@@ -31,7 +31,7 @@ const SECTOR_LAYER: Record<string, number> = {
   fuel: 2,
 };
 
-type BizLite = Pick<Business, "id" | "name" | "sector" | "launch_6">;
+type BizLite = Pick<Business, "id" | "name" | "sector">;
 
 export default async function GraphPage() {
   await requireModuleAccess("/indaba/graph");
@@ -40,7 +40,7 @@ export default async function GraphPage() {
   const [businessesRes, linksRes, loopsRes] = await Promise.all([
     supabase
       .from("businesses")
-      .select("id, name, sector, launch_6")
+      .select("id, name, sector")
       .order("name"),
     supabase.from("supply_chain_links").select("*"),
     supabase

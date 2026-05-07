@@ -329,7 +329,6 @@ export default function MapView({
                       </span>
                     </div>
                   </div>
-                  {b.launch_6 ? <Pill tone="gold">L6</Pill> : null}
                 </div>
               </Card>
             );

@@ -143,7 +143,6 @@ export type Business = {
   key_suppliers: string[] | null;
   key_customers: string[] | null;
   pain_points: string[] | null;
-  launch_6: boolean;
   onboarding_stage: BusinessStage;
   zimx_fit_score: Rating1to5 | null;
   mapped_by: Uuid | null;

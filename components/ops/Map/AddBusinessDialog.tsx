@@ -174,7 +174,6 @@ export default function AddBusinessDialog({
         address: address ?? null,
         est_monthly_volume: volume,
         notes: form.notes.trim() || null,
-        launch_6: false,
       },
     );
 

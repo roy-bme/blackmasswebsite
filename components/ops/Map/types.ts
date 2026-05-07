@@ -8,7 +8,6 @@ export type MapBusiness = {
   lat: number;
   lng: number;
   est_monthly_volume: number | null;
-  launch_6: boolean;
   notes: string | null;
   decision_maker_name: string | null;
   decision_maker_title: string | null;

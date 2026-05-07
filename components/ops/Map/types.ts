@@ -21,6 +21,7 @@ export type MapBusiness = {
   zimx_fit_score: number | null;
   active: boolean;
   mapped_by: string | null;
+  created_at: string;
 };
 
 export type MapLinkEndpoint = {

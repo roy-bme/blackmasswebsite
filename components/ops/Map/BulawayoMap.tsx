@@ -30,8 +30,10 @@ type BulawayoMapProps = {
   onMoveBusiness?: (businessId: string) => void;
   onDeleteBusiness?: (businessId: string) => void;
   onLogInteraction?: (businessId: string) => void;
+  onSelectBusiness?: (businessId: string) => void;
   showCandidates?: boolean;
   onOpenCandidate?: (candidateId: string) => void;
+  flyToTarget?: { lat: number; lng: number; key: number } | null;
 };
 
 function escapeHtml(value: unknown): string {
@@ -71,8 +73,10 @@ export default function BulawayoMap({
   onMoveBusiness,
   onDeleteBusiness,
   onLogInteraction,
+  onSelectBusiness,
   showCandidates = true,
   onOpenCandidate,
+  flyToTarget = null,
 }: BulawayoMapProps) {
   const BRENDON_UUID = "b15b3634-51b4-493a-a80b-662f219164ca";
   const TAFADZWA_UUID = "458fc192-05a2-472b-9ade-c22cd16ad0e3";
@@ -214,6 +218,8 @@ export default function BulawayoMap({
               if (action === "log") onLogInteraction?.(businessId);
             };
           });
+        }).on("click", () => {
+          onSelectBusiness?.(b.id);
         }).addTo(layers.businesses);
       }
     }
@@ -305,7 +311,13 @@ export default function BulawayoMap({
           .addTo(layers.introductions);
       }
     }
-  }, [businesses, discoveryCandidates, links, introductions, showBrendon, showTafadzwa, showUnattributed, showIntros, showCandidates, zoneNameById, onEditBusiness, onMoveBusiness, onDeleteBusiness, onLogInteraction, onOpenCandidate]);
+  }, [businesses, discoveryCandidates, links, introductions, showBrendon, showTafadzwa, showUnattributed, showIntros, showCandidates, zoneNameById, onEditBusiness, onMoveBusiness, onDeleteBusiness, onLogInteraction, onOpenCandidate, onSelectBusiness]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !flyToTarget) return;
+    map.flyTo([flyToTarget.lat, flyToTarget.lng], 17, { duration: 0.6 });
+  }, [flyToTarget]);
 
   // Pin-drop mode: install a one-shot click handler.
   useEffect(() => {

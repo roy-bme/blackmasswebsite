@@ -34,7 +34,7 @@ type LinkRow = Pick<
   | "payment_frequency"
 >;
 
-type ZoneRow = Pick<Zone, "id" | "name" | "centre_lat" | "centre_lng">;
+type ZoneRow = Pick<Zone, "id" | "name" | "type" | "centre_lat" | "centre_lng" | "boundary_geojson">;
 
 type IntroductionRow = Pick<
   Introduction,
@@ -71,7 +71,7 @@ export default async function MapPage() {
         .select(
           "id, supplier_id, buyer_id, product, est_monthly_volume, payment_frequency",
         ),
-      supabase.from("zones").select("id, name, centre_lat, centre_lng"),
+      supabase.from("zones").select("id, name, type, centre_lat, centre_lng, boundary_geojson"),
       canSeeIntros
         ? supabase
             .from("introductions")
@@ -172,8 +172,10 @@ export default async function MapPage() {
   const zones: MapZone[] = zoneRows.map((z) => ({
     id: z.id,
     name: z.name,
+    type: z.type ?? null,
     centre_lat: z.centre_lat != null ? Number(z.centre_lat) : null,
     centre_lng: z.centre_lng != null ? Number(z.centre_lng) : null,
+    boundary_geojson: z.boundary_geojson ?? null,
   }));
 
 

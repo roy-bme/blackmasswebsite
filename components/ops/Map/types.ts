@@ -42,8 +42,10 @@ export type MapLink = {
 export type MapZone = {
   id: string;
   name: string;
+  type?: string | null;
   centre_lat: number | null;
   centre_lng: number | null;
+  boundary_geojson?: Record<string, unknown> | null;
 };
 
 export type MapIntroduction = {

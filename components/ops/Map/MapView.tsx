@@ -77,6 +77,7 @@ export default function MapView({
   const [activeBusinessId, setActiveBusinessId] = useState<string | null>(null);
   const [flyToTarget, setFlyToTarget] = useState<{ lat: number; lng: number; key: number } | null>(null);
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const BRENDON_UUID = "b15b3634-51b4-493a-a80b-662f219164ca";
   const TAFADZWA_UUID = "458fc192-05a2-472b-9ade-c22cd16ad0e3";
@@ -209,6 +210,11 @@ export default function MapView({
       key_suppliers: b.key_suppliers?.join(", ") ?? "", key_customers: b.key_customers?.join(", ") ?? "", pain_points: b.pain_points?.join(", ") ?? "", zimx_fit_score: b.zimx_fit_score?.toString() ?? "",
     });
   }
+
+  const handleAddPhotoClick = useCallback(() => {
+    console.log("[MapView] Add photo button clicked");
+    fileInputRef.current?.click();
+  }, []);
 
   async function handlePhotoUpload(file: File) {
     if (!selected || isUploadingPhoto) return;
@@ -430,20 +436,25 @@ export default function MapView({
                 </div>
               ))}
             </div>
-            <label className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded bg-zimx-gold px-4 py-2 text-sm font-semibold text-black">
+            <button
+              type="button"
+              className="inline-flex min-h-11 items-center justify-center rounded bg-zimx-gold px-4 py-2 text-sm font-semibold text-black"
+              onClick={handleAddPhotoClick}
+            >
               {isUploadingPhoto ? "Uploading..." : uploadSuccess ? "✓ Uploaded" : "Add photo"}
-              <input
-                type="file"
-                className="hidden"
-                accept="image/*"
-                capture="environment"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) void handlePhotoUpload(file);
-                  e.currentTarget.value = "";
-                }}
-              />
-            </label>
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              accept="image/*"
+              capture="environment"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void handlePhotoUpload(file);
+                e.currentTarget.value = "";
+              }}
+            />
           </div>
           <div className="mt-3 flex gap-2"><Button size="sm" variant="primary" onClick={async () => {
             if (!selected) return;

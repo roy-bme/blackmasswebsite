@@ -128,7 +128,10 @@ export default function MapView({
 
   const handleSelectFromPin = useCallback((businessId: string) => {
     setActiveBusinessId(businessId);
-  }, []);
+    const business = items.find((b) => b.id === businessId) ?? null;
+    setSelected(business);
+    setEditing(false);
+  }, [items]);
 
   const handleMapClick = useCallback(
     (coords: { lat: number; lng: number }) => {
@@ -212,7 +215,7 @@ export default function MapView({
   }
 
   const handleAddPhotoClick = useCallback(() => {
-    console.log("[MapView] Add photo button clicked");
+    console.log("file input clicked");
     fileInputRef.current?.click();
   }, []);
 
@@ -415,17 +418,28 @@ export default function MapView({
         />
       ) : null}
       {selected ? (
-        <div className="fixed inset-y-0 right-0 z-40 w-full max-w-md overflow-y-auto border-l border-line-10 bg-ink-900 p-4">
+        <div className="fixed inset-y-0 right-0 z-[1000] w-full max-w-md overflow-y-auto border-l border-line-10 bg-ink-900 p-4">
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-white">Edit business</h3>
-            <Button size="sm" variant="ghost" onClick={() => setSelected(null)}>Close</Button>
+            <h3 className="text-white">{editing ? "Edit business" : "Business details"}</h3>
+            <div className="flex gap-2">
+              {!editing ? <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>Edit</Button> : null}
+              <Button size="sm" variant="ghost" onClick={() => { setSelected(null); setEditing(false); }}>Close</Button>
+            </div>
           </div>
-          <div className="space-y-2 text-white">
-            {["name", "sector", "decision_maker_name", "decision_maker_title", "phone", "email", "linkedin", "est_monthly_volume", "zimx_fit_score", "key_suppliers", "key_customers", "pain_points"].map((k) => (
-              <Input key={k} value={form[k] ?? ""} onChange={(e) => setForm((p) => ({ ...p, [k]: e.target.value }))} />
-            ))}
-            <Textarea value={form.notes ?? ""} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} rows={4} />
-          </div>
+          {editing ? (
+            <div className="space-y-2 text-white">
+              {["name", "sector", "decision_maker_name", "decision_maker_title", "phone", "email", "linkedin", "est_monthly_volume", "zimx_fit_score", "key_suppliers", "key_customers", "pain_points"].map((k) => (
+                <Input key={k} value={form[k] ?? ""} onChange={(e) => setForm((p) => ({ ...p, [k]: e.target.value }))} />
+              ))}
+              <Textarea value={form.notes ?? ""} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} rows={4} />
+            </div>
+          ) : (
+            <div className="space-y-1 text-sm text-fg-mute">
+              <div className="text-white">{selected.name}</div>
+              <div>{selected.sector}</div>
+              <div>{selected.notes ?? "No notes."}</div>
+            </div>
+          )}
           <div className="mt-4 rounded border border-line-15 p-3 text-white">
             <div className="mb-2 text-sm font-semibold">Photos</div>
             <div className="mb-3 grid grid-cols-3 gap-2">
@@ -448,7 +462,6 @@ export default function MapView({
               type="file"
               className="hidden"
               accept="image/*"
-              capture="environment"
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file) void handlePhotoUpload(file);
@@ -456,7 +469,7 @@ export default function MapView({
               }}
             />
           </div>
-          <div className="mt-3 flex gap-2"><Button size="sm" variant="primary" onClick={async () => {
+          {editing ? <div className="mt-3 flex gap-2"><Button size="sm" variant="primary" onClick={async () => {
             if (!selected) return;
             const patch = { name: form.name.trim(), sector: form.sector as MapBusiness["sector"], notes: form.notes?.trim() || null, est_monthly_volume: form.est_monthly_volume ? Number(form.est_monthly_volume) : null, zone_id: form.zone_id || null, decision_maker_name: form.decision_maker_name?.trim() || null, decision_maker_title: form.decision_maker_title?.trim() || null, phone: form.phone?.trim() || null, email: form.email?.trim() || null, linkedin: form.linkedin?.trim() || null, key_suppliers: (form.key_suppliers || "").split(",").map((s) => s.trim()).filter(Boolean), key_customers: (form.key_customers || "").split(",").map((s) => s.trim()).filter(Boolean), pain_points: (form.pain_points || "").split(",").map((s) => s.trim()).filter(Boolean), zimx_fit_score: form.zimx_fit_score ? Number(form.zimx_fit_score) : null };
             const res = await opsApiPost("/api/ops/businesses/update", { id: selected.id, patch });
@@ -464,11 +477,11 @@ export default function MapView({
             setItems((prev) => prev.map((b) => (b.id === selected.id ? { ...b, ...patch } : b)));
             toast.success("Business updated.");
             setSelected(null);
-          }}>Save</Button><Button size="sm" variant="ghost" onClick={() => setSelected(null)}>Cancel</Button></div>
+          }}>Save</Button><Button size="sm" variant="ghost" onClick={() => setEditing(false)}>Cancel</Button></div> : null}
         </div>
       ) : null}
       {interactionBusinessId ? <LogInteractionModal businessId={interactionBusinessId} businessName={items.find((b) => b.id === interactionBusinessId)?.name ?? "Business"} onClose={() => setInteractionBusinessId(null)} onSaved={() => {}} /> : null}
-      {selectedCandidate ? <div className="fixed inset-y-0 right-0 z-40 w-full max-w-md overflow-y-auto border-l border-line-10 bg-ink-900 p-4 text-white">
+      {selectedCandidate ? <div className="fixed inset-y-0 right-0 z-[1000] w-full max-w-md overflow-y-auto border-l border-line-10 bg-ink-900 p-4 text-white">
         <div className="mb-3 flex items-center justify-between"><h3>UNVERIFIED — Bot Discovery</h3><Button size="sm" variant="ghost" onClick={() => setSelectedCandidate(null)}>Close</Button></div>
         <div className="space-y-2 text-sm">
           <div className="font-semibold">{selectedCandidate.name}</div>

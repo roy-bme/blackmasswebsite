@@ -57,22 +57,6 @@ function hashJitter(id: string, salt: number): number {
 }
 
 
-const ZONE_TYPE_COLORS: Record<string, string> = {
-  suburb: "#3B82F6",
-  industrial: "#F97316",
-  market: "#DC2626",
-  cbd: "#FACC15",
-  residential: "#22C55E",
-  ground_ops_priority_1: "#D4AF37",
-  ground_ops_secondary: "#14B8A6",
-  wholesale: "#A855F7",
-};
-
-function zoneColor(type: string | null): string {
-  if (!type) return "#64748B";
-  return ZONE_TYPE_COLORS[type] ?? "#64748B";
-}
-
 export default function BulawayoMap({
   businesses,
   discoveryCandidates,
@@ -103,7 +87,6 @@ export default function BulawayoMap({
   const onMapClickRef = useRef(onMapClick);
   const layersRef = useRef<{
     links: L.LayerGroup;
-    zones: L.LayerGroup;
     zoneLabels: L.LayerGroup;
     businesses: L.LayerGroup;
     introductions: L.LayerGroup;
@@ -139,15 +122,11 @@ export default function BulawayoMap({
       },
     ).addTo(map);
 
-    map.createPane("zonesPane");
-    const zonesPane = map.getPane("zonesPane");
-    if (zonesPane) zonesPane.style.zIndex = "350";
 
     map.createPane("zoneLabelsPane");
     const zoneLabelsPane = map.getPane("zoneLabelsPane");
     if (zoneLabelsPane) zoneLabelsPane.style.zIndex = "450";
 
-    const zonesLayer = L.layerGroup().addTo(map);
     const linksLayer = L.layerGroup().addTo(map);
     const zoneLabelsLayer = L.layerGroup().addTo(map);
     const businessesLayer = L.layerGroup().addTo(map);
@@ -155,7 +134,6 @@ export default function BulawayoMap({
 
     mapRef.current = map;
     layersRef.current = {
-      zones: zonesLayer,
       links: linksLayer,
       zoneLabels: zoneLabelsLayer,
       businesses: businessesLayer,
@@ -173,7 +151,6 @@ export default function BulawayoMap({
     const layers = layersRef.current;
     if (!layers) return;
 
-    layers.zones.clearLayers();
     layers.zoneLabels.clearLayers();
     layers.businesses.clearLayers();
     layers.links.clearLayers();
@@ -185,33 +162,6 @@ export default function BulawayoMap({
     const showLinkLayer = true;
 
     for (const zone of zones) {
-      if (zone.boundary_geojson) {
-        const color = zoneColor(zone.type ?? null);
-        const layer = L.geoJSON(zone.boundary_geojson as unknown as GeoJSON.GeoJsonObject, {
-          pane: "zonesPane",
-          style: {
-            color,
-            weight: 1,
-            opacity: 0.4,
-            fillColor: color,
-            fillOpacity: 0.15,
-          },
-        });
-
-        layer.eachLayer((featureLayer) => {
-          if (!(featureLayer instanceof L.Path)) return;
-          featureLayer.bindTooltip(zone.name, { sticky: true });
-          featureLayer.on("mouseover", () => {
-            featureLayer.setStyle({ fillOpacity: 0.3 });
-          });
-          featureLayer.on("mouseout", () => {
-            featureLayer.setStyle({ fillOpacity: 0.15 });
-          });
-        });
-
-        layer.addTo(layers.zones);
-      }
-
       if (zone.centre_lat != null && zone.centre_lng != null) {
         const labelIcon = L.divIcon({
           className: "indaba-zone-label",

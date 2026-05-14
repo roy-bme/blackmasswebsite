@@ -255,11 +255,13 @@ export default function BulawayoMap({
           b.notes && b.notes.length > 120
             ? `${b.notes.slice(0, 120)}…`
             : b.notes ?? "";
+        const firstPhoto = b.photos?.[0] ?? null;
 
         const popupHtml = `
           <div style="font-size:14px; min-width:200px; line-height:1.4;">
             <div style="font-weight:600; font-size:14px; color:#1B1B1B;">${escapeHtml(b.name)}</div>
             <div style="color:#666; font-size:12px; text-transform:capitalize; margin-top:2px;">${escapeHtml(b.sector)} · ${escapeHtml(zoneName)}</div>
+            ${firstPhoto ? `<img src="${escapeHtml(firstPhoto)}" alt="Business photo" style="margin-top:6px;width:72px;height:72px;object-fit:cover;border-radius:6px;border:1px solid #ddd;" />` : `<div style="margin-top:6px;font-size:12px;color:#666;">📷 Tap to add photo</div>`}
             <div style="color:#1B1B1B; font-size:13px; margin-top:4px;">$${volume.toLocaleString()}/mo</div>
             ${notes ? `<div style="color:#555; font-size:12px; margin-top:4px;">${escapeHtml(notes)}</div>` : ""}
             <div style="display:flex; gap:8px; margin-top:8px;">

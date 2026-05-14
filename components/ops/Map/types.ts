@@ -21,6 +21,7 @@ export type MapBusiness = {
   active: boolean;
   mapped_by: string | null;
   created_at: string;
+  photos: string[] | null;
 };
 
 export type MapLinkEndpoint = {

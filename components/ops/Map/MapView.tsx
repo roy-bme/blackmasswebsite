@@ -12,6 +12,7 @@ import Textarea from "@/components/ops/ui/Textarea";
 import Button from "@/components/ops/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { opsApiPost } from "@/lib/ops/api-client";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 import AddBusinessDialog from "./AddBusinessDialog";
 import LogInteractionModal from "@/components/ops/Interactions/LogInteractionModal";
@@ -66,6 +67,8 @@ export default function MapView({
   const [selected, setSelected] = useState<MapBusiness | null>(null);
   const [movingPinId, setMovingPinId] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState(false);
   const [form, setForm] = useState<Record<string, string>>({});
   const [interactionBusinessId, setInteractionBusinessId] = useState<string | null>(null);
   const [showCandidates, setShowCandidates] = useState(true);
@@ -205,6 +208,50 @@ export default function MapView({
       decision_maker_name: b.decision_maker_name ?? "", decision_maker_title: b.decision_maker_title ?? "", phone: b.phone ?? "", email: b.email ?? "", linkedin: b.linkedin ?? "",
       key_suppliers: b.key_suppliers?.join(", ") ?? "", key_customers: b.key_customers?.join(", ") ?? "", pain_points: b.pain_points?.join(", ") ?? "", zimx_fit_score: b.zimx_fit_score?.toString() ?? "",
     });
+  }
+
+  async function handlePhotoUpload(file: File) {
+    if (!selected || isUploadingPhoto) return;
+    setIsUploadingPhoto(true);
+    const supabase = createSupabaseBrowserClient();
+    const filePath = `${selected.id}/${Date.now()}_${file.name.replace(/\s+/g, "_")}`;
+    const { error: uploadError } = await supabase.storage
+      .from("business-photos")
+      .upload(filePath, file, { upsert: false });
+    if (uploadError) {
+      toast.error("Upload failed. Please try again.");
+      setIsUploadingPhoto(false);
+      return;
+    }
+    const { data } = supabase.storage.from("business-photos").getPublicUrl(filePath);
+    const nextPhotos = [...(selected.photos ?? []), data.publicUrl];
+    const { error: updateError } = await supabase
+      .from("businesses")
+      .update({ photos: nextPhotos })
+      .eq("id", selected.id);
+    if (updateError) {
+      toast.error("Photo uploaded, but saving failed.");
+      setIsUploadingPhoto(false);
+      return;
+    }
+    setItems((prev) => prev.map((b) => (b.id === selected.id ? { ...b, photos: nextPhotos } : b)));
+    setSelected((prev) => (prev ? { ...prev, photos: nextPhotos } : prev));
+    setUploadSuccess(true);
+    window.setTimeout(() => setUploadSuccess(false), 1200);
+    setIsUploadingPhoto(false);
+  }
+
+  async function handleDeletePhoto(photoUrl: string) {
+    if (!selected) return;
+    const nextPhotos = (selected.photos ?? []).filter((url) => url !== photoUrl);
+    const supabase = createSupabaseBrowserClient();
+    const { error } = await supabase.from("businesses").update({ photos: nextPhotos }).eq("id", selected.id);
+    if (error) {
+      toast.error("Could not delete photo.");
+      return;
+    }
+    setItems((prev) => prev.map((b) => (b.id === selected.id ? { ...b, photos: nextPhotos } : b)));
+    setSelected((prev) => (prev ? { ...prev, photos: nextPhotos } : prev));
   }
 
   return (
@@ -372,6 +419,31 @@ export default function MapView({
               <Input key={k} value={form[k] ?? ""} onChange={(e) => setForm((p) => ({ ...p, [k]: e.target.value }))} />
             ))}
             <Textarea value={form.notes ?? ""} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} rows={4} />
+          </div>
+          <div className="mt-4 rounded border border-line-15 p-3 text-white">
+            <div className="mb-2 text-sm font-semibold">Photos</div>
+            <div className="mb-3 grid grid-cols-3 gap-2">
+              {(selected.photos ?? []).map((photo) => (
+                <div key={photo} className="relative">
+                  <img src={photo} alt="Business" className="h-20 w-full rounded object-cover" />
+                  <button type="button" onClick={() => void handleDeletePhoto(photo)} className="absolute right-1 top-1 h-6 w-6 rounded-full bg-black/70 text-xs text-white">✕</button>
+                </div>
+              ))}
+            </div>
+            <label className="inline-flex min-h-11 cursor-pointer items-center justify-center rounded bg-zimx-gold px-4 py-2 text-sm font-semibold text-black">
+              {isUploadingPhoto ? "Uploading..." : uploadSuccess ? "✓ Uploaded" : "Add photo"}
+              <input
+                type="file"
+                className="hidden"
+                accept="image/*"
+                capture="environment"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void handlePhotoUpload(file);
+                  e.currentTarget.value = "";
+                }}
+              />
+            </label>
           </div>
           <div className="mt-3 flex gap-2"><Button size="sm" variant="primary" onClick={async () => {
             if (!selected) return;

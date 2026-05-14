@@ -70,6 +70,23 @@ export default function MapView({
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [form, setForm] = useState<Record<string, string>>({});
+
+  const buildFormFromBusiness = useCallback((business: MapBusiness): Record<string, string> => ({
+    name: business.name ?? "",
+    sector: business.sector ?? "",
+    zone_id: business.zone_id ?? "",
+    decision_maker_name: business.decision_maker_name ?? "",
+    decision_maker_title: business.decision_maker_title ?? "",
+    phone: business.phone ?? "",
+    email: business.email ?? "",
+    linkedin: business.linkedin ?? "",
+    est_monthly_volume: business.est_monthly_volume?.toString() ?? "",
+    zimx_fit_score: business.zimx_fit_score?.toString() ?? "",
+    key_suppliers: business.key_suppliers?.join(", ") ?? "",
+    key_customers: business.key_customers?.join(", ") ?? "",
+    pain_points: business.pain_points?.join(", ") ?? "",
+    notes: business.notes ?? "",
+  }), []);
   const [interactionBusinessId, setInteractionBusinessId] = useState<string | null>(null);
   const [showCandidates, setShowCandidates] = useState(true);
   const [selectedCandidate, setSelectedCandidate] = useState<MapDiscoveryCandidate | null>(null);
@@ -131,7 +148,8 @@ export default function MapView({
     const business = items.find((b) => b.id === businessId) ?? null;
     setSelected(business);
     setEditing(false);
-  }, [items]);
+    setForm(business ? buildFormFromBusiness(business) : {});
+  }, [buildFormFromBusiness, items]);
 
   const handleMapClick = useCallback(
     (coords: { lat: number; lng: number }) => {
@@ -422,16 +440,50 @@ export default function MapView({
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-white">{editing ? "Edit business" : "Business details"}</h3>
             <div className="flex gap-2">
-              {!editing ? <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>Edit</Button> : null}
+              {!editing ? <Button size="sm" variant="ghost" onClick={() => { if (selected) setForm(buildFormFromBusiness(selected)); setEditing(true); }}>Edit</Button> : null}
               <Button size="sm" variant="ghost" onClick={() => { setSelected(null); setEditing(false); }}>Close</Button>
             </div>
           </div>
           {editing ? (
-            <div className="space-y-2 text-white">
-              {["name", "sector", "decision_maker_name", "decision_maker_title", "phone", "email", "linkedin", "est_monthly_volume", "zimx_fit_score", "key_suppliers", "key_customers", "pain_points"].map((k) => (
-                <Input key={k} value={form[k] ?? ""} onChange={(e) => setForm((p) => ({ ...p, [k]: e.target.value }))} />
+            <div className="space-y-3 text-white">
+              {[
+                ["Name", "name"],
+                ["Sector", "sector"],
+                ["Decision maker", "decision_maker_name"],
+                ["Decision maker title", "decision_maker_title"],
+                ["Phone", "phone"],
+                ["Email", "email"],
+                ["LinkedIn", "linkedin"],
+                ["Est. Monthly Volume", "est_monthly_volume"],
+                ["ZIMX fit score", "zimx_fit_score"],
+                ["Key suppliers (comma-separated)", "key_suppliers"],
+                ["Key customers (comma-separated)", "key_customers"],
+                ["Pain points (comma-separated)", "pain_points"],
+              ].map(([label, key]) => (
+                <label key={key} className="block text-sm">
+                  <span className="mb-1 block text-fg-mute">{label}</span>
+                  <Input value={form[key] ?? ""} onChange={(e) => setForm((p) => ({ ...p, [key]: e.target.value }))} />
+                </label>
               ))}
-              <Textarea value={form.notes ?? ""} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} rows={4} />
+              <label className="block text-sm">
+                <span className="mb-1 block text-fg-mute">Zone</span>
+                <select
+                  className="w-full rounded-md border border-line-15 bg-ink-800 px-3 py-2 text-sm text-white"
+                  value={form.zone_id ?? ""}
+                  onChange={(e) => setForm((p) => ({ ...p, zone_id: e.target.value }))}
+                >
+                  <option value="">Unassigned</option>
+                  {zones.map((z) => (
+                    <option key={z.id} value={z.id}>
+                      {z.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="block text-sm">
+                <span className="mb-1 block text-fg-mute">Notes</span>
+                <Textarea value={form.notes ?? ""} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} rows={4} />
+              </label>
             </div>
           ) : (
             <div className="space-y-1 text-sm text-fg-mute">

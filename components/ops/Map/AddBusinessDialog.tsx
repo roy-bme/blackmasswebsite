@@ -74,6 +74,7 @@ export default function AddBusinessDialog({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [address, setAddress] = useState<string | null>(null);
+  const [addressInput, setAddressInput] = useState("");
   const [addressLoading, setAddressLoading] = useState(false);
   const [sectorOptions, setSectorOptions] = useState<Array<{ label: string; value: string }>>([]);
 
@@ -82,6 +83,7 @@ export default function AddBusinessDialog({
     setForm(emptyForm(lastSector));
     setError(null);
     setAddress(null);
+    setAddressInput("");
   }, [open, lastSector]);
 
   useEffect(() => {
@@ -94,8 +96,14 @@ export default function AddBusinessDialog({
     setAddressLoading(true);
     setAddress(null);
     reverseGeocode(coords.lat, coords.lng, controller.signal)
-      .then((resolved) => setAddress(resolved))
-      .catch(() => setAddress(null))
+      .then((resolved) => {
+        setAddress(resolved);
+        setAddressInput(resolved ?? "");
+      })
+      .catch(() => {
+        setAddress(null);
+        setAddressInput("");
+      })
       .finally(() => setAddressLoading(false));
     return () => controller.abort();
   }, [open, coords]);
@@ -137,6 +145,7 @@ export default function AddBusinessDialog({
     setForm(emptyForm(lastSector));
     setError(null);
     setAddress(null);
+    setAddressInput("");
     onClose();
   }
 
@@ -171,7 +180,7 @@ export default function AddBusinessDialog({
         zone_id: form.zone_id || null,
         lat: coords.lat,
         lng: coords.lng,
-        address: address ?? null,
+        address: addressInput.trim() || null,
         est_monthly_volume: volume,
         notes: form.notes.trim() || null,
       },
@@ -238,24 +247,26 @@ export default function AddBusinessDialog({
               Tap the map first to place a pin.
             </p>
           ) : (
-            <div>
-              <p className="font-mono text-[10px] uppercase tracking-eyebrow text-fg-dim">
-                Location
-              </p>
-              <p className="mt-1 flex items-center gap-2 border border-line-15 bg-ink-700 px-3 py-2 text-[13px] text-white">
-                <span className="truncate">{locationDisplay}</span>
+            <div className="space-y-2">
+              <Input
+                label="Location"
+                name="address"
+                type="text"
+                value={addressInput}
+                onChange={(e) => setAddressInput(e.target.value)}
+                placeholder={locationDisplay}
+              />
+              <div className="flex items-center gap-2">
                 {addressLoading ? (
                   <span
                     aria-hidden="true"
                     className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-line-20 border-t-zimx-gold"
                   />
                 ) : null}
-              </p>
-              {!address && !addressLoading ? (
-                <p className="mt-1 font-mono text-[10px] text-fg-dim">
+                <p className="font-mono text-[10px] text-fg-dim">
                   {formatCoords(coords.lat, coords.lng)}
                 </p>
-              ) : null}
+              </div>
             </div>
           )}
 

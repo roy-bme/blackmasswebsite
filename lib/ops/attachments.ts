@@ -10,7 +10,17 @@
 
 import { getSupabaseUrl } from "@/lib/supabase/env";
 
-export const STORAGE_HOST_SAFE = "ipqmdinidqpmchggjdov.supabase.co";
+const DEFAULT_STORAGE_HOST = "qkowublaosqvoynkybfh.supabase.co";
+
+function getStorageHostSafe(): string {
+  try {
+    return new URL(getSupabaseUrl()).hostname.toLowerCase();
+  } catch {
+    return DEFAULT_STORAGE_HOST;
+  }
+}
+
+export const STORAGE_HOST_SAFE = getStorageHostSafe();
 export const STORAGE_URL_PREFIX = `https://${STORAGE_HOST_SAFE}/storage/v1/`;
 
 /** Accepts either a full https storage URL or a plain storage path. */

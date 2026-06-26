@@ -1,6 +1,22 @@
 /** @type {import('next').NextConfig} */
 
-const STORAGE_HOST = "ipqmdinidqpmchggjdov.supabase.co";
+const LEGACY_STORAGE_HOST = "ipqmdinidqpmchggjdov.supabase.co";
+const DEFAULT_STORAGE_HOST = "qkowublaosqvoynkybfh.supabase.co";
+
+function getStorageHost() {
+  try {
+    return new URL(
+      process.env.NEXT_PUBLIC_SUPABASE_URL ?? `https://${DEFAULT_STORAGE_HOST}`,
+    ).hostname;
+  } catch {
+    return DEFAULT_STORAGE_HOST;
+  }
+}
+
+const STORAGE_HOSTS = Array.from(
+  new Set([LEGACY_STORAGE_HOST, getStorageHost(), DEFAULT_STORAGE_HOST]),
+);
+const storageSources = STORAGE_HOSTS.map((host) => `https://${host}`).join(" ");
 
 const SHARED_HEADERS = [
   {
@@ -25,8 +41,8 @@ const SHARED_HEADERS = [
 // x-nonce so Server Components / inline <Script> tags can read it.
 const CSP = [
   "default-src 'self'",
-  `img-src 'self' data: https://${STORAGE_HOST} https://*.basemaps.cartocdn.com https://*.openstreetmap.org`,
-  `connect-src 'self' https://${STORAGE_HOST} https://nominatim.openstreetmap.org`,
+  `img-src 'self' data: ${storageSources} https://*.basemaps.cartocdn.com https://*.openstreetmap.org`,
+  `connect-src 'self' ${storageSources} https://nominatim.openstreetmap.org`,
   "script-src 'self' 'nonce-NONCE_PLACEHOLDER' 'strict-dynamic'",
   "style-src 'self' 'unsafe-inline' https://unpkg.com",
   "font-src 'self' data:",
@@ -39,6 +55,12 @@ const CSP = [
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  images: {
+    remotePatterns: STORAGE_HOSTS.map((hostname) => ({
+      protocol: "https",
+      hostname,
+    })),
+  },
 
   async headers() {
     return [

@@ -90,7 +90,7 @@ export default async function MapPage() {
         .not("lng", "is", null),
     ]);
 
-  const businessRows = (businessesRes.data ?? []) as BusinessRow[];
+  const businessRows = ((businessesRes.data ?? []) as BusinessRow[]).filter(b => b.lat != null && b.lng != null);
   const linkRows = (linksRes.data ?? []) as LinkRow[];
   const zoneRows = (zonesRes.data ?? []) as ZoneRow[];
   const introductionRows = (introductionsRes.data ?? []) as IntroductionRow[];

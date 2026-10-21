@@ -95,3 +95,42 @@ Healthcheck: `GET /api/ops/health` with `X-Health-Token: $HEALTH_CHECK_TOKEN`.
 - `npm test` — unit tests (Node built-in runner, currently CSV escape)
 - `npm run audit:check` — waiver-aware `npm audit --omit=dev` wrapper;
   fails on un-waived highs / criticals
+
+## Trading Links and Clusters (Indaba)
+
+The Indaba portal lives in this repository (`roy-bme/blackmasswebsite`), on the
+`claude/blackmass-corporate-website-caGTR` default branch. `zimxfinance/Indaba` is
+its separate background agent service.
+
+Apply `supabase/migrations/20261021115544_trading_links_clusters.sql` to the
+Indaba/BulawayoPilot database before deploying this UI. This PR does not apply
+it to production. The migration retains all legacy link columns/data and keeps
+endpoint/product/author aliases in sync for the existing graph and agent readers.
+Legacy links start as reported; unowned legacy rows remain admin-only.
+
+- **Trading Links** (`/indaba/trading-links`): available to active ops, bd and
+  admin users, including the mobile navigation. Choose buyer/seller or quick-add
+  a name-only business; unknown sector/location/type are not fabricated.
+  Location-less businesses remain in the directory and trading picker but are
+  omitted from the geographic map until located. No financial-volume, margin,
+  tax or registration inputs are collected here. The old map link dialog sends
+  users to this page; its old API returns 410 instead of bypassing RLS.
+- **Confirmed by both sides** is a field-user attestation after checking with
+  both businesses; it does not send WhatsApp messages or authenticate the two
+  contacts. Contact names/numbers and payment pain notes are optional.
+- **Clusters** (`/indaba/clusters`): undirected connected groups of 3+ businesses
+  from confirmed links only, largest first. Chains count; cycles are not required.
+- Dashboard summary: links created Monday 00:00 through the following Monday
+  00:00 in Africa/Harare, by author and current reported/confirmed status. Cluster
+  count is all-time confirmed links. Data reads page beyond Supabase's row cap.
+- Field users see/edit their own trading entries; Roy's existing admin role sees
+  all. The shared business directory stays available for picking endpoints.
+  Session-scoped saves enforce RLS, immutable attribution and active membership.
+  The migration installs the missing live role-lockdown trigger and makes the
+  existing KPI view security-invoker so it cannot leak the global link count.
+
+Run `npm test`, `npm run typecheck`, `npm run lint -- --max-warnings=0` and
+`npm run build`. The tests run the migration in isolated PostgreSQL (PGlite) with
+production-shaped fixtures and exercise field/admin/anonymous permissions,
+self-promotion prevention, ownership forgery, legacy preservation, clusters,
+validation and Zimbabwe week boundaries. No production records are created.

@@ -15,6 +15,8 @@ export type NavId =
   | "dashboard"
   | "map"
   | "directory"
+  | "trading-links"
+  | "clusters"
   | "graph"
   | "intros"
   | "events"
@@ -42,6 +44,14 @@ export const NAV_ITEMS: NavItem[] = [
     icon: "dashboard",
     roles: ["admin", "ops", "bd", "compliance"],
     mobileRoles: ["admin", "ops", "bd", "compliance"],
+  },
+  {
+    id: "trading-links", href: "/indaba/trading-links", label: "Trading Links", icon: "trading-links",
+    roles: ["admin", "ops", "bd"], mobileRoles: ["admin", "ops", "bd"],
+  },
+  {
+    id: "clusters", href: "/indaba/clusters", label: "Clusters", icon: "clusters",
+    roles: ["admin", "ops", "bd"], mobileRoles: [],
   },
   {
     id: "map",

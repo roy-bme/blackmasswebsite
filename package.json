@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "test": "rm -rf .test-dist && tsc -p tsconfig.test.json && node --test .test-dist/middleware.test.js && node --experimental-strip-types --test components/**/__tests__/*.test.ts",
+    "test": "rm -rf .test-dist && tsc -p tsconfig.test.json && node --test .test-dist/middleware.test.js tests/*.test.cjs",
     "audit:check": "node scripts/audit-check.mjs",
     "verify:security": "node scripts/verify-security.mjs"
   },
@@ -24,6 +24,7 @@
     "tailwind-merge": "3.5.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "0.3.14",
     "@types/leaflet": "^1.9.21",
     "@types/node": "^20.14.10",
     "@types/react": "^18.3.3",

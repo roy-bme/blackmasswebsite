@@ -10,6 +10,8 @@ const PATHS: Record<NavId, JSX.Element> = {
   directory: (
     <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
   ),
+  "trading-links": <path d="M4 8h16M16 4l4 4-4 4M20 16H4M8 12l-4 4 4 4" />,
+  clusters: <path d="M4 4h4v4H4zM16 4h4v4h-4zM10 16h4v4h-4zM8 6h8M6 8l6 8 6-8" />,
   graph: (
     <>
       <circle cx="6" cy="6" r="2" />

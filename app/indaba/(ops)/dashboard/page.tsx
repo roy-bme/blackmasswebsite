@@ -1,3 +1,4 @@
+import WeeklySummary from "@/components/ops/Trading/WeeklySummary";
 import Card from "@/components/ops/ui/Card";
 import Button from "@/components/ops/ui/Button";
 import EmptyState from "@/components/ops/ui/EmptyState";
@@ -193,6 +194,8 @@ export default async function DashboardPage({
             <Metric label="Agent runs · 24h" value={String(runs.length)} sub="" />
           ) : null}
         </div>
+
+        {(isAdmin || isOps || isBd) && <WeeklySummary isAdmin={isAdmin} />}
 
         <div className="mt-4 grid gap-4 xl:grid-cols-[1.4fr_1fr]">
           <div className="flex flex-col gap-4">

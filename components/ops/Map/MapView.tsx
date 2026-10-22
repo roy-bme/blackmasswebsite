@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import Card from "@/components/ops/ui/Card";
@@ -497,7 +499,7 @@ export default function MapView({
             <div className="mb-3 grid grid-cols-3 gap-2">
               {(selected.photos ?? []).map((photo) => (
                 <div key={photo} className="relative">
-                  <img src={photo} alt="Business" className="h-20 w-full rounded object-cover" />
+                  <Image src={photo} alt="Business" width={80} height={80} unoptimized className="h-20 w-full rounded object-cover" />
                   <button type="button" onClick={() => void handleDeletePhoto(photo)} className="absolute right-1 top-1 h-6 w-6 rounded-full bg-black/70 text-xs text-white">✕</button>
                 </div>
               ))}

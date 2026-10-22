@@ -1,0 +1,78 @@
+const { test } = require('node:test');
+const assert = require('node:assert/strict');
+const { readFileSync } = require('node:fs');
+const { PGlite } = require('@electric-sql/pglite');
+const roy = '10000000-0000-0000-0000-000000000001';
+const brendon = '10000000-0000-0000-0000-000000000002';
+const other = '10000000-0000-0000-0000-000000000003';
+const a = '20000000-0000-0000-0000-000000000001';
+const b = '20000000-0000-0000-0000-000000000002';
+
+test('migration preserves legacy rows and enforces ownership in real PostgreSQL RLS', async () => {
+  const db = new PGlite();
+  try {
+    // Minimal reproduction of the inspected production tables, policies and role helper.
+    await db.exec(`
+      create role anon; create role authenticated;
+      create schema auth;
+      create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true),'')::uuid $$;
+      grant usage on schema auth,public to authenticated,anon;
+      grant execute on function auth.uid() to authenticated,anon;
+      create type public.user_role as enum ('admin','ops','bd','compliance');
+      create table public.users(id uuid primary key,name text,role user_role,active boolean default true,revoked_at timestamptz);
+      insert into users(id,name,role) values ('${roy}','Roy','admin'),('${brendon}','Brendon','ops'),('${other}','Other field user','bd');
+      create function public.current_user_role() returns user_role language sql stable security definer set search_path=public as $$ select role from public.users where id=auth.uid() $$;
+      alter table users enable row level security;
+      grant select,update on users to authenticated;
+      create policy users_select_self_or_admin on users for select using (id=auth.uid() or current_user_role()='admin');
+      create policy users_update_self_or_admin on users for update using (id=auth.uid() or current_user_role()='admin');
+      create table businesses(id uuid primary key default gen_random_uuid(),name text not null,sector text not null,lat numeric not null,lng numeric not null,mapped_by uuid references users(id));
+      alter table businesses enable row level security;
+      create policy businesses_select_all on businesses for select using(true);
+      create policy businesses_ops_admin_bd_insert on businesses for insert with check(current_user_role() in ('ops','admin','bd'));
+      insert into businesses(id,name,sector,lat,lng) values ('${a}','A','retail',-20,28),('${b}','B','retail',-20,28);
+      create table supply_chain_links(id uuid primary key default gen_random_uuid(),supplier_id uuid references businesses(id),buyer_id uuid references businesses(id),product text,payment_method text,est_monthly_volume numeric,payment_frequency text,friction_points text[],mapped_by uuid references users(id),created_at timestamptz default now());
+      create view v_indaba_kpis as select count(*) as supply_chain_links from supply_chain_links;
+      grant select on v_indaba_kpis to authenticated;
+      alter table supply_chain_links enable row level security;
+      grant all on supply_chain_links to authenticated,anon;
+      create policy sc_links_select_ops_admin on supply_chain_links for select using(current_user_role() in ('ops','admin'));
+      create policy sc_links_write_ops_admin on supply_chain_links for all using(current_user_role() in ('ops','admin'));
+      create policy sc_links_select_compliance on supply_chain_links for select using(current_user_role()='compliance');
+      insert into supply_chain_links(supplier_id,buyer_id,product,payment_method,payment_frequency,mapped_by,created_at) values ('${a}','${b}','Legacy goods','EcoCash','Weekly','${brendon}','2025-01-01');
+    `);
+    await db.exec(readFileSync('supabase/migrations/20261021115544_trading_links_clusters.sql','utf8'));
+    const legacy = (await db.query('select * from supply_chain_links')).rows[0];
+    assert.equal(legacy.goods_or_service,'Legacy goods'); assert.equal(legacy.product,'Legacy goods');
+    assert.equal(legacy.status,'reported'); assert.equal(legacy.created_by,brendon);
+    assert.equal(legacy.current_payment_method,'EcoCash'); assert.equal(legacy.trade_frequency,'weekly');
+    const asUser = async id => db.exec(`reset role; select set_config('request.jwt.claim.sub','${id}',false); set role authenticated;`);
+    const insert = owner => db.query(`insert into supply_chain_links(buyer_business_id,seller_business_id,goods_or_service,trade_frequency,current_payment_method,created_by) values ('${a}','${b}','Bread','weekly','cash','${owner}') returning *`);
+    await asUser(brendon);
+    const own = (await insert(brendon)).rows[0];
+    assert.equal(own.buyer_id,a); assert.equal(own.supplier_id,b); assert.equal(own.mapped_by,brendon);
+    await assert.rejects(insert(other), /row-level security/);
+    await assert.rejects(db.query(`update users set role='admin' where id='${brendon}'`), /server-managed/);
+    await assert.rejects(db.query(`update supply_chain_links set created_by='${other}' where id='${own.id}'`), /cannot be changed/);
+    await assert.rejects(db.query(`update supply_chain_links set created_at='2001-01-01' where id='${own.id}'`), /cannot be changed/);
+    await assert.rejects(db.query(`update supply_chain_links set seller_business_id=buyer_business_id where id='${own.id}'`), /must differ/);
+    await assert.rejects(db.query(`update supply_chain_links set trade_frequency='daily' where id='${own.id}'`), /check constraint/);
+    await db.query(`update supply_chain_links set status='confirmed' where id='${own.id}'`);
+    await db.query(`insert into businesses(name,sector,mapped_by) values ('Quick added','unknown','${brendon}')`);
+    await assert.rejects(db.query(`insert into businesses(name,sector,mapped_by) values ('Forged','unknown','${roy}')`), /row-level security/);
+    await asUser(other);
+    assert.equal(Number((await db.query('select supply_chain_links from v_indaba_kpis')).rows[0].supply_chain_links), 0);
+    assert.equal((await db.query('select * from supply_chain_links')).rows.length,0);
+    assert.equal((await db.query(`update supply_chain_links set goods_or_service='Stolen' where id='${own.id}' returning id`)).rows.length,0);
+    await insert(other);
+    await asUser(roy);
+    assert.equal((await db.query('select * from supply_chain_links')).rows.length,3);
+    assert.equal((await db.query(`update supply_chain_links set payment_pain_note='Reviewed' where id='${own.id}' returning id`)).rows.length,1);
+    await db.exec(`reset role; update users set active=false where id='${other}';`);
+    await asUser(other);
+    assert.equal((await db.query('select * from supply_chain_links')).rows.length,0);
+    await assert.rejects(insert(other), /row-level security/);
+    await db.exec('reset role; set role anon;');
+    await assert.rejects(db.query('select * from supply_chain_links'), /permission denied/);
+  } finally { await db.close(); }
+});

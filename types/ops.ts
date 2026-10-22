@@ -131,8 +131,8 @@ export type Business = {
   sub_sector: string | null;
   address: string | null;
   zone_id: Uuid | null;
-  lat: Numeric;
-  lng: Numeric;
+  lat: Numeric | null;
+  lng: Numeric | null;
   decision_maker_name: string | null;
   decision_maker_title: string | null;
   phone: string | null;

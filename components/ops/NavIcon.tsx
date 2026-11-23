@@ -40,6 +40,7 @@ const PATHS: Record<NavId, JSX.Element> = {
       <path d="M9 2v4M15 2v4M9 13h.01M15 13h.01M9 17h6" />
     </>
   ),
+  "synthetic-panel": <path d="M4 20V10M9 20V4M14 20v-7M19 20v-11M3 20h18" />,
   feed: (
     <path d="M21 15a2 2 0 01-2 2H8l-5 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" />
   ),

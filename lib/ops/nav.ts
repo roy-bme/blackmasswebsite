@@ -22,6 +22,7 @@ export type NavId =
   | "events"
   | "compliance"
   | "agent"
+  | "synthetic-panel"
   | "feed"
   | "settings";
 
@@ -108,6 +109,14 @@ export const NAV_ITEMS: NavItem[] = [
     icon: "agent",
     roles: ["admin", "compliance"],
     mobileRoles: ["compliance"],
+  },
+  {
+    id: "synthetic-panel",
+    href: "/indaba/synthetic-panel",
+    label: "Synthetic Panel",
+    icon: "synthetic-panel",
+    roles: ["admin", "compliance"],
+    mobileRoles: [],
   },
   {
     id: "feed",

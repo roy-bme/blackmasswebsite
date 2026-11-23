@@ -141,6 +141,11 @@ export function copyRuleViolations(text: string): string[] {
     [/\bzig\b/i, "positions against ZiG"],
     [/\bzwg\b/i, "positions against ZWG"],
     [/local\s+currency/i, "positions against local currency"],
+    [/one[\s-]*(for|to)[\s-]*one/i, "states a backing ratio"],
+    [/\b1\s*(:|[\s-]*(for|to)[\s-]*)\s*1\b/i, "states a backing ratio"],
+    [/\breserves?\b/i, "describes the reserve"],
+    [/\bbacked\s+by\b/i, "describes what backs it (say "USDC-backed")"],
+    [/fully[\s-]+backed/i, "describes the backing"],
   ];
   return rules.filter(([re]) => re.test(text)).map(([, why]) => why);
 }

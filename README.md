@@ -60,9 +60,12 @@ GitHub settings before the hardening pass is considered deployed:
 6. **`npm update`** — run locally after cloning to pull Next 14.2.35+
    into `node_modules`; commit the refreshed
    `package-lock.json` if your environment differs.
-7. **Basemap provider** — we still load Carto tiles with lat/lng in the
-   URL. Acceptable given internal-only usage; follow-up item to host
-   tiles ourselves if we expand to customer-facing map surfaces.
+7. **Basemap provider** — Carto raster tiles require an API key. Set
+   `CARTOBasemaps` in Vercel (Production); the map page reads it server-side
+   and appends `?key=` to tile requests (see `lib/maps/carto.ts`). Browsers
+   necessarily see the key in tile URLs, so restrict it by allowed referrer
+   in the Carto dashboard. Follow-up item to host tiles ourselves if we
+   expand to customer-facing map surfaces.
 
 ## indaba.zimx.io
 

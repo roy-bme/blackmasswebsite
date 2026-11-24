@@ -40,6 +40,7 @@ type MapViewProps = {
   canAddRecords: boolean;
   canDeleteRecords: boolean;
   currentUserId: string;
+  cartoApiKey: string | null;
 };
 
 export default function MapView({
@@ -52,6 +53,7 @@ export default function MapView({
   canAddRecords,
   canDeleteRecords,
   currentUserId,
+  cartoApiKey,
 }: MapViewProps) {
   const toast = useToast();
   const [items, setItems] = useState(businesses);
@@ -312,6 +314,7 @@ export default function MapView({
             links={links}
             zones={zones}
             introductions={introductions}
+            cartoApiKey={cartoApiKey}
             showBrendon={showBrendon}
             showTafadzwa={showTafadzwa}
             showUnattributed={showUnattributed}

@@ -5,6 +5,11 @@ import "leaflet/dist/leaflet.css";
 import { useEffect, useMemo, useRef } from "react";
 
 import { cn } from "@/lib/ops/cn";
+import {
+  CARTO_ATTRIBUTION,
+  CARTO_VOYAGER_RASTER_URL,
+  withCartoKey,
+} from "@/lib/maps/carto";
 import type {
   MapBusiness,
   MapDiscoveryCandidate,
@@ -34,6 +39,8 @@ type BulawayoMapProps = {
   showCandidates?: boolean;
   onOpenCandidate?: (candidateId: string) => void;
   flyToTarget?: { lat: number; lng: number; key: number } | null;
+  /** CARTO API key, read server-side from CARTOBasemaps. Null if not configured. */
+  cartoApiKey: string | null;
 };
 
 function escapeHtml(value: unknown): string {
@@ -78,6 +85,7 @@ export default function BulawayoMap({
   showCandidates = true,
   onOpenCandidate,
   flyToTarget = null,
+  cartoApiKey,
 }: BulawayoMapProps) {
   const BRENDON_UUID = "b15b3634-51b4-493a-a80b-662f219164ca";
   const TAFADZWA_UUID = "458fc192-05a2-472b-9ade-c22cd16ad0e3";
@@ -112,15 +120,17 @@ export default function BulawayoMap({
       scrollWheelZoom: true,
     });
 
-    L.tileLayer(
-      "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
-      {
-        attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: "abcd",
-        maxZoom: 20,
-      },
-    ).addTo(map);
+    if (!cartoApiKey) {
+      console.warn(
+        "[indaba map] CARTOBasemaps is not set. CARTO tiles will show an API key watermark until it is configured.",
+      );
+    }
+
+    L.tileLayer(withCartoKey(CARTO_VOYAGER_RASTER_URL, cartoApiKey), {
+      attribution: CARTO_ATTRIBUTION,
+      subdomains: "abcd",
+      maxZoom: 20,
+    }).addTo(map);
 
 
     map.createPane("zoneLabelsPane");
@@ -145,7 +155,7 @@ export default function BulawayoMap({
       mapRef.current = null;
       layersRef.current = null;
     };
-  }, []);
+  }, [cartoApiKey]);
 
   useEffect(() => {
     const layers = layersRef.current;

@@ -41,6 +41,7 @@ type MapWrapperProps = {
   showCandidates?: boolean;
   onOpenCandidate?: (candidateId: string) => void;
   flyToTarget?: { lat: number; lng: number; key: number } | null;
+  cartoApiKey: string | null;
 };
 
 export default function MapWrapper(props: MapWrapperProps) {

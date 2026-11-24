@@ -10,6 +10,7 @@ import type {
 } from "@/components/ops/Map/types";
 import PageHeader from "@/components/ops/PageHeader";
 import Pill from "@/components/ops/ui/Pill";
+import { getCartoApiKey } from "@/lib/maps/carto";
 import { requireModuleAccess } from "@/lib/ops/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type {
@@ -54,6 +55,7 @@ type DataOnly<T> = { data: T[] | null };
 export default async function MapPage() {
   const user = await requireModuleAccess("/indaba/map");
   const supabase = createSupabaseServerClient();
+  const cartoApiKey = getCartoApiKey();
 
   const canSeeIntros = user.role === "admin" || user.role === "bd";
   const canAddRecords =
@@ -238,6 +240,7 @@ export default async function MapPage() {
         canAddRecords={canAddRecords}
         canDeleteRecords={user.role === "admin"}
         currentUserId={user.id}
+        cartoApiKey={cartoApiKey}
       />
     </div>
   );
